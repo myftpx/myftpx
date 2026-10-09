@@ -17,6 +17,11 @@
             <a href="<?= url('admin/reports') ?>" class="<?= active_nav('/admin/reports') ?>"><span class="ico">◔</span> Raporlar</a>
             <a href="<?= url('admin/admins') ?>" class="<?= active_nav('/admin/admins') ?>"><span class="ico">🔐</span> Yöneticiler</a>
             <a href="<?= url('admin/activity-log') ?>" class="<?= active_nav('/admin/activity-log') ?>"><span class="ico">🕒</span> Hareket Logu</a>
+            <a href="<?= url('admin/cancellations') ?>" class="<?= active_nav('/admin/cancellations') ?>"><span class="ico">✖</span> İptal Talepleri</a>
+            <a href="<?= url('admin/affiliates') ?>" class="<?= active_nav('/admin/affiliates') ?>"><span class="ico">🤝</span> Ortaklık</a>
+            <a href="<?= url('admin/downloads') ?>" class="<?= active_nav('/admin/downloads') ?>"><span class="ico">⬇</span> İndirmeler</a>
+            <a href="<?= url('admin/custom-fields') ?>" class="<?= active_nav('/admin/custom-fields') ?>"><span class="ico">📋</span> Özel Alanlar</a>
+            <a href="<?= url('admin/mass-mail') ?>" class="<?= active_nav('/admin/mass-mail') ?>"><span class="ico">📧</span> Toplu E-posta</a>
             <div class="section-label">Müşteriler</div>
             <a href="<?= url('admin/clients') ?>" class="<?= active_nav('/admin/clients') ?>"><span class="ico">👥</span> Müşteriler</a>
             <div class="section-label">Ürün & Hizmet</div>

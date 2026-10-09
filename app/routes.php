@@ -86,6 +86,13 @@ $router->post('/client/contacts/{id}/delete', [ClientController::class, 'contact
 $router->post('/client/tickets/{id}/rate', [ClientController::class, 'ticketRate']);
 $router->get('/client/quotes', [ClientController::class, 'quotes']);
 $router->get('/client/quotes/{id}', [ClientController::class, 'quoteDetail']);
+$router->get('/client/affiliate', [ClientController::class, 'affiliate']);
+$router->post('/client/affiliate/enable', [ClientController::class, 'affiliateEnable']);
+$router->get('/client/downloads', [ClientController::class, 'downloads']);
+$router->post('/client/services/{id}/cancel', [ClientController::class, 'serviceCancel']);
+$router->post('/client/services/{id}/addon', [ClientController::class, 'serviceAddonAdd']);
+$router->post('/client/service-addons/{id}/remove', [ClientController::class, 'serviceAddonRemove']);
+$router->get('/client/invoices/{id}/print', [ClientController::class, 'invoicePrint']);
 
 // ---- Admin: auth & dashboard ----
 $router->get('/admin/login', [AdminController::class, 'showLogin']);
@@ -194,6 +201,19 @@ $router->get('/admin/netlen', [AdminController::class, 'netlen']);
 $router->post('/admin/netlen/save', [AdminController::class, 'netlenSave']);
 $router->post('/admin/netlen/sync', [AdminController::class, 'netlenSync']);
 $router->post('/admin/netlen/register', [AdminController::class, 'netlenRegister']);
+$router->get('/admin/affiliates', [AdminController::class, 'affiliates']);
+$router->post('/admin/affiliates/{id}/payout', [AdminController::class, 'affiliatePayout']);
+$router->get('/admin/downloads', [AdminController::class, 'downloads']);
+$router->post('/admin/downloads/add', [AdminController::class, 'downloadAdd']);
+$router->post('/admin/downloads/{id}/delete', [AdminController::class, 'downloadDelete']);
+$router->get('/admin/custom-fields', [AdminController::class, 'customFields']);
+$router->post('/admin/custom-fields/add', [AdminController::class, 'customFieldAdd']);
+$router->post('/admin/custom-fields/{id}/delete', [AdminController::class, 'customFieldDelete']);
+$router->get('/admin/cancellations', [AdminController::class, 'cancellations']);
+$router->post('/admin/cancellations/{id}/approve', [AdminController::class, 'cancellationApprove']);
+$router->post('/admin/cancellations/{id}/deny', [AdminController::class, 'cancellationDeny']);
+$router->get('/admin/mass-mail', [AdminController::class, 'massMail']);
+$router->post('/admin/mass-mail/send', [AdminController::class, 'massMailSend']);
 
 // ---- Cron ----
 $router->get('/cron/billing', [App\Controllers\CronController::class, 'billing']);

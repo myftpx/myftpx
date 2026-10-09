@@ -59,7 +59,10 @@ class ClientController extends Controller
         $cardsStmt = db()->prepare("SELECT * FROM saved_cards WHERE user_id = ? AND status = 'active' ORDER BY is_default DESC, id DESC");
         $cardsStmt->execute([$uid]);
         $cards = $cardsStmt->fetchAll();
-        echo $this->render('client/service_detail', ['title' => $service['domain'] ?: $service['product_name'], 'service' => $service, 'cards' => $cards], 'client');
+        $addons = db()->query('SELECT * FROM addons WHERE status = 1 ORDER BY id')->fetchAll();
+        $activeAddons = db()->prepare('SELECT sa.id said, a.* FROM service_addons sa JOIN addons a ON a.id = sa.addon_id WHERE sa.service_id = ?');
+        $activeAddons->execute([$id]);
+        echo $this->render('client/service_detail', ['title' => $service['domain'] ?: $service['product_name'], 'service' => $service, 'cards' => $cards, 'addons' => $addons, 'activeAddons' => $activeAddons->fetchAll()], 'client');
     }
 
     public function domains(): void
@@ -672,6 +675,96 @@ class ClientController extends Controller
         $stmt = db()->prepare('SELECT * FROM quote_items WHERE quote_id = ?');
         $stmt->execute([$id]);
         echo $this->render('client/quote_detail', ['title' => $quote['quote_number'], 'quote' => $quote, 'items' => $stmt->fetchAll()], 'client');
+    }
+
+    public function affiliate(): void
+    {
+        $uid = $this->userId();
+        $user = auth()->user();
+        if (!$user['referral_code']) {
+            db()->prepare('UPDATE users SET referral_code = ? WHERE id = ?')->execute([generate_referral_code(), $uid]);
+            $user = auth()->user();
+        }
+        $stmt = db()->prepare('SELECT * FROM affiliate_commissions WHERE affiliate_id = ? ORDER BY id DESC');
+        $stmt->execute([$uid]);
+        $commissions = $stmt->fetchAll();
+        $stmt = db()->prepare('SELECT COUNT(*) c FROM users WHERE referred_by = ?');
+        $stmt->execute([$uid]);
+        $referrals = (int)$stmt->fetchColumn();
+        echo $this->render('client/affiliate', ['title' => 'Ortaklık (Affiliate)', 'user' => $user, 'commissions' => $commissions, 'referrals' => $referrals], 'client');
+    }
+
+    public function affiliateEnable(): void
+    {
+        $this->validateCsrf();
+        $uid = $this->userId();
+        db()->prepare('UPDATE users SET affiliate = 1 WHERE id = ?')->execute([$uid]);
+        flash('success', 'Ortaklık programı aktifleştirildi.');
+        redirect(url('client/affiliate'));
+    }
+
+    public function downloads(): void
+    {
+        $this->userId();
+        $downloads = db()->query('SELECT * FROM downloads WHERE status = 1 ORDER BY id DESC')->fetchAll();
+        echo $this->render('client/downloads', ['title' => 'İndirmeler', 'downloads' => $downloads], 'client');
+    }
+
+    public function serviceCancel(string $id): void
+    {
+        $this->validateCsrf();
+        $uid = $this->userId();
+        $stmt = db()->prepare('SELECT id FROM services WHERE id = ? AND user_id = ?');
+        $stmt->execute([$id, $uid]);
+        if (!$stmt->fetch()) redirect(url('client/services'));
+        db()->prepare('INSERT INTO cancellation_requests (service_id, user_id, type, reason, status) VALUES (?, ?, ?, ?, "pending")')
+            ->execute([$id, $uid, $this->input('type', 'immediate'), $this->input('reason', '')]);
+        flash('info', 'İptal talebiniz alındı. Onaylandığında hizmetiniz sonlandırılacaktır.');
+        redirect(url('client/services/' . $id));
+    }
+
+    public function serviceAddonAdd(string $id): void
+    {
+        $this->validateCsrf();
+        $uid = $this->userId();
+        $addonId = (int)$this->input('addon_id', 0);
+        $stmt = db()->prepare('SELECT * FROM services WHERE id = ? AND user_id = ?');
+        $stmt->execute([$id, $uid]);
+        $service = $stmt->fetch();
+        if (!$service) redirect(url('client/services'));
+        $stmt = db()->prepare('SELECT * FROM addons WHERE id = ? AND status = 1');
+        $stmt->execute([$addonId]);
+        $addon = $stmt->fetch();
+        if (!$addon) { flash('error', 'Geçersiz eklenti.'); redirect(url('client/services/' . $id)); }
+
+        $invoice = (new StoreController())->createInvoice($uid, [
+            ['description' => 'Eklenti: ' . $addon['name'] . ' (' . ($service['domain'] ?: 'Hizmet #' . $id) . ')', 'amount' => (float)$addon['price']],
+        ]);
+        db()->prepare('INSERT INTO service_addons (service_id, addon_id, status) VALUES (?, ?, "pending")')->execute([$id, $addonId]);
+        flash('info', 'Eklenti siparişi oluşturuldu. Ödeme sonrası aktifleşir.');
+        redirect(url('client/invoices/' . $invoice));
+    }
+
+    public function serviceAddonRemove(string $id): void
+    {
+        $this->validateCsrf();
+        $uid = $this->userId();
+        db()->prepare('DELETE FROM service_addons WHERE id = ? AND service_id IN (SELECT id FROM services WHERE user_id = ?)')->execute([$id, $uid]);
+        flash('success', 'Eklenti kaldırıldı.');
+        redirect($_SERVER['HTTP_REFERER'] ?? url('client/services'));
+    }
+
+    public function invoicePrint(string $id): void
+    {
+        $uid = $this->userId();
+        $stmt = db()->prepare('SELECT i.*, u.first_name, u.last_name, u.email, u.company, u.address, u.city, u.country FROM invoices i LEFT JOIN users u ON u.id = i.user_id WHERE i.id = ? AND i.user_id = ?');
+        $stmt->execute([$id, $uid]);
+        $invoice = $stmt->fetch();
+        if (!$invoice) { http_response_code(404); echo $this->render('errors/404', ['title' => 'Bulunamadı'], 'client'); return; }
+        $stmt = db()->prepare('SELECT * FROM invoice_items WHERE invoice_id = ?');
+        $stmt->execute([$id]);
+        $items = $stmt->fetchAll();
+        echo $this->render('client/invoice_print', ['title' => 'Fatura', 'invoice' => $invoice, 'items' => $items], 'print');
     }
 }
 

@@ -1,6 +1,9 @@
 <div class="page-head">
     <h1>Fatura <?= e($invoice['invoice_number']) ?></h1>
-    <a class="btn btn-outline" href="<?= url('client/invoices') ?>">Geri</a>
+    <div class="flex gap-2">
+        <a class="btn btn-outline" target="_blank" href="<?= url('client/invoices/' . $invoice['id'] . '/print') ?>">🖨 Yazdır / PDF</a>
+        <a class="btn btn-outline" href="<?= url('client/invoices') ?>">Geri</a>
+    </div>
 </div>
 
 <div class="card mb-3">
@@ -23,6 +26,9 @@
             <tr><td><?= e($it['description']) ?></td><td class="text-right"><?= money($it['amount']) ?></td></tr>
         <?php endforeach; ?>
         <tr><td class="text-right"><strong>Ara Toplam</strong></td><td class="text-right"><?= money($invoice['amount']) ?></td></tr>
+        <?php if ((float)$invoice['discount'] > 0): ?>
+        <tr><td class="text-right">İndirim <?= $invoice['promo_code'] ? '(' . e($invoice['promo_code']) . ')' : '' ?></td><td class="text-right text-success">-<?= money($invoice['discount']) ?></td></tr>
+        <?php endif; ?>
         <tr><td class="text-right">KDV (%<?= e(setting('tax_rate', '0')) ?>)</td><td class="text-right"><?= money($invoice['tax']) ?></td></tr>
         <tr><td class="text-right"><strong>Toplam</strong></td><td class="text-right"><strong><?= money($invoice['total']) ?></strong></td></tr>
     </table></div>

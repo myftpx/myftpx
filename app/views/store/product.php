@@ -56,6 +56,10 @@
                         </div>
                     <?php endforeach; ?>
                     <div class="form-group">
+                        <label>Kupon Kodu (opsiyonel)</label>
+                        <input class="form-control" name="promo_code" placeholder="WELCOME10">
+                    </div>
+                    <div class="form-group">
                         <label>Ödeme Yöntemi</label>
                         <select class="form-control" name="payment_method">
                             <option value="balance">Bakiye</option>

@@ -81,3 +81,56 @@
         <?php endif; ?>
     </div>
 </div>
+
+<div class="card mt-3">
+    <div class="card-header"><h3>Eklentiler (Addons)</h3></div>
+    <div class="card-body">
+        <?php if ($activeAddons): ?>
+            <p class="text-muted mb-2">Aktif eklentileriniz:</p>
+            <?php foreach ($activeAddons as $aa): ?>
+                <div class="flex justify-between items-center mb-2">
+                    <span><strong><?= e($aa['name']) ?></strong> — <?= money($aa['price']) ?>/<?= e($aa['billing_cycle']) ?></span>
+                    <form method="post" action="<?= url('client/service-addons/' . $aa['said'] . '/remove') ?>"><?= csrf_field() ?><button class="btn btn-danger btn-sm" type="submit">Kaldır</button></form>
+                </div>
+            <?php endforeach; ?>
+        <?php endif; ?>
+        <?php if ($addons): ?>
+            <form method="post" action="<?= url('client/services/' . $service['id'] . '/addon') ?>" class="flex gap-2 items-center" style="flex-wrap:wrap">
+                <?= csrf_field() ?>
+                <select class="form-control" name="addon_id" style="max-width:280px">
+                    <?php foreach ($addons as $a): ?>
+                        <option value="<?= (int)$a['id'] ?>"><?= e($a['name']) ?> — <?= money($a['price']) ?>/<?= e($a['billing_cycle']) ?></option>
+                    <?php endforeach; ?>
+                </select>
+                <button class="btn btn-primary" type="submit">Eklenti Ekle</button>
+            </form>
+        <?php else: ?>
+            <p class="text-muted">Kullanılabilir eklenti yok.</p>
+        <?php endif; ?>
+    </div>
+</div>
+
+<?php if ($service['status'] === 'active'): ?>
+<div class="card mt-3">
+    <div class="card-header"><h3>Hizmeti İptal Et</h3></div>
+    <div class="card-body">
+        <form method="post" action="<?= url('client/services/' . $service['id'] . '/cancel') ?>" onsubmit="return confirm('Hizmeti iptal etmek istediğinize emin misiniz?')">
+            <?= csrf_field() ?>
+            <div class="form-row">
+                <div class="form-group">
+                    <label>İptal Türü</label>
+                    <select class="form-control" name="type">
+                        <option value="immediate">Hemen iptal et</option>
+                        <option value="end_of_period">Dönem sonunda iptal et</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Sebep (opsiyonel)</label>
+                    <input class="form-control" name="reason">
+                </div>
+            </div>
+            <button class="btn btn-danger" type="submit">İptal Talebi Gönder</button>
+        </form>
+    </div>
+</div>
+<?php endif; ?>

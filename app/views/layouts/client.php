@@ -30,6 +30,8 @@
             <a href="<?= url('client/profile') ?>" class="<?= active_nav('/client/profile') ?>"><span class="ico">⚙</span> Profilim</a>
             <a href="<?= url('client/contacts') ?>" class="<?= active_nav('/client/contacts') ?>"><span class="ico">👥</span> Alt Hesaplar</a>
             <a href="<?= url('client/quotes') ?>" class="<?= active_nav('/client/quotes') ?>"><span class="ico">📄</span> Tekliflerim</a>
+            <a href="<?= url('client/downloads') ?>" class="<?= active_nav('/client/downloads') ?>"><span class="ico">⬇</span> İndirmeler</a>
+            <a href="<?= url('client/affiliate') ?>" class="<?= active_nav('/client/affiliate') ?>"><span class="ico">🤝</span> Ortaklık</a>
         </nav>
         <div class="side-user">
             <div class="name"><?= e($u['first_name'] . ' ' . $u['last_name']) ?></div>

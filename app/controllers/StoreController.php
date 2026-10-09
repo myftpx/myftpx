@@ -99,9 +99,20 @@ class StoreController extends Controller
         $stmt = db()->prepare('INSERT INTO orders (order_number, user_id, product_id, billing_cycle, domain, config, amount, status, payment_method) VALUES (?, ?, ?, ?, ?, ?, ?, "pending", ?)');
         $stmt->execute([$orderNumber, $userId, $productId, $cycle, $domain, json_encode($config), $amount, $paymentMethod]);
 
+        $promoCode = strtoupper(trim($this->input('promo_code', '')));
+        $discount = 0;
+        if ($promoCode !== '') {
+            $pv = validate_promo($promoCode, $amount);
+            if (!$pv['valid']) {
+                flash('error', $pv['message']);
+                redirect(url('store/product/' . $product['slug']));
+            }
+            $discount = $pv['discount'];
+        }
+
         $invoice = $this->createInvoice($userId, [
             ['description' => $product['name'] . ' (' . $this->cycleLabel($cycle) . ')' . ($domain ? ' — ' . $domain : ''), 'amount' => $amount],
-        ]);
+        ], $discount, $promoCode);
 
         if ($paymentMethod === 'balance') {
             $user = auth()->user();
@@ -128,7 +139,7 @@ class StoreController extends Controller
         flash('success', 'Mesajınız alındı. En kısa sürede dönüş yapacağız.');
         redirect(url('/'));
     }
-    public function createInvoice(int $userId, array $items): int
+    public function createInvoice(int $userId, array $items, float $discount = 0, string $promoCode = ''): int
     {
         $taxRate = (float)setting('tax_rate', 0);
         $prefix = setting('invoice_prefix', 'INV-');
@@ -137,10 +148,11 @@ class StoreController extends Controller
         $subtotal = 0;
         foreach ($items as $i) $subtotal += (float)$i['amount'];
         $tax = round($subtotal * $taxRate / 100, 2);
-        $total = round($subtotal + $tax, 2);
+        $total = round($subtotal + $tax - $discount, 2);
+        if ($total < 0) $total = 0;
 
-        $stmt = db()->prepare('INSERT INTO invoices (invoice_number, user_id, amount, tax, total, status, due_date) VALUES (?, ?, ?, ?, ?, "unpaid", ?)');
-        $stmt->execute([$number, $userId, $subtotal, $tax, $total, date('Y-m-d', strtotime('+7 days'))]);
+        $stmt = db()->prepare('INSERT INTO invoices (invoice_number, user_id, amount, tax, discount, promo_code, total, status, due_date) VALUES (?, ?, ?, ?, ?, ?, ?, "unpaid", ?)');
+        $stmt->execute([$number, $userId, $subtotal, $tax, $discount, $promoCode, $total, date('Y-m-d', strtotime('+7 days'))]);
         $invoiceId = (int)db()->lastInsertId();
 
         $stmt = db()->prepare('INSERT INTO invoice_items (invoice_id, description, amount) VALUES (?, ?, ?)');
@@ -162,6 +174,14 @@ class StoreController extends Controller
 
         $stmt = db()->prepare('INSERT INTO transactions (invoice_id, user_id, amount, gateway, transaction_id, status) VALUES (?, ?, ?, ?, ?, "completed")');
         $stmt->execute([$invoiceId, $inv['user_id'], $inv['total'], $gateway, uniqid('TXN-')]);
+
+        // Affiliate commission for referred users
+        credit_affiliate((int)$inv['user_id'], (float)$inv['total'], (int)$invoiceId);
+
+        // Increment promo usage
+        if (!empty($inv['promo_code'])) {
+            db()->prepare('UPDATE promotions SET used = used + 1 WHERE code = ?')->execute([$inv['promo_code']]);
+        }
     }
 
     public function activateOrder(string $orderNumber, int $userId, array $product, string $cycle, string $domain, array $config, float $amount): void

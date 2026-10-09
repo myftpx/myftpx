@@ -113,8 +113,16 @@ class AuthController extends Controller
             redirect(url('register'));
         }
 
-        $stmt = db()->prepare('INSERT INTO users (first_name, last_name, email, password, account_type, tc_no, tax_no, company, email_verified) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 0)');
-        $stmt->execute([$firstName, $lastName, $email, password_hash($password, PASSWORD_DEFAULT), $accountType, $tcNo, $taxNo, $company]);
+        $refCode = strtoupper(trim($_GET['ref'] ?? ''));
+        $referredBy = null;
+        if ($refCode !== '') {
+            $stmt = db()->prepare('SELECT id FROM users WHERE referral_code = ?');
+            $stmt->execute([$refCode]);
+            $referredBy = $stmt->fetchColumn() ?: null;
+        }
+
+        $stmt = db()->prepare('INSERT INTO users (first_name, last_name, email, password, account_type, tc_no, tax_no, company, email_verified, referral_code, referred_by) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 0, ?, ?)');
+        $stmt->execute([$firstName, $lastName, $email, password_hash($password, PASSWORD_DEFAULT), $accountType, $tcNo, $taxNo, $company, generate_referral_code(), $referredBy]);
         $id = (int)db()->lastInsertId();
 
         $code = \App\Core\Otp::generate($email, 'register');

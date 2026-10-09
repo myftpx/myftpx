@@ -1010,6 +1010,128 @@ class AdminController extends Controller
         }
         redirect(url('admin/netlen'));
     }
+
+    public function affiliates(): void
+    {
+        $this->guard();
+        $affiliates = db()->query("SELECT * FROM users WHERE referral_code != '' ORDER BY affiliate_balance DESC")->fetchAll();
+        $commissions = db()->query('SELECT c.*, a.first_name afname, a.last_name aflname, u.first_name rfname, u.last_name rlname FROM affiliate_commissions c LEFT JOIN users a ON a.id = c.affiliate_id LEFT JOIN users u ON u.id = c.referred_user_id ORDER BY c.id DESC LIMIT 300')->fetchAll();
+        echo $this->render('admin/affiliates', ['title' => 'Ortaklık (Affiliate)', 'affiliates' => $affiliates, 'commissions' => $commissions], 'admin');
+    }
+
+    public function affiliatePayout(string $id): void
+    {
+        $this->guard(); $this->validateCsrf();
+        db()->prepare('UPDATE affiliate_commissions SET status = "paid" WHERE affiliate_id = ? AND status = "pending"')->execute([$id]);
+        flash('success', 'Komisyonlar ödendi olarak işaretlendi.');
+        redirect(url('admin/affiliates'));
+    }
+
+    public function downloads(): void
+    {
+        $this->guard();
+        $downloads = db()->query('SELECT * FROM downloads ORDER BY id DESC')->fetchAll();
+        echo $this->render('admin/downloads', ['title' => 'İndirmeler', 'downloads' => $downloads], 'admin');
+    }
+
+    public function downloadAdd(): void
+    {
+        $this->guard(); $this->validateCsrf();
+        db()->prepare('INSERT INTO downloads (name, description, file_path, category, status) VALUES (?, ?, ?, ?, 1)')
+            ->execute([trim($this->input('name', '')), $this->input('description', ''), trim($this->input('file_path', '')), trim($this->input('category', ''))]);
+        flash('success', 'İndirme eklendi.');
+        redirect(url('admin/downloads'));
+    }
+
+    public function downloadDelete(string $id): void
+    {
+        $this->guard(); $this->validateCsrf();
+        db()->prepare('DELETE FROM downloads WHERE id = ?')->execute([$id]);
+        flash('success', 'İndirme silindi.');
+        redirect(url('admin/downloads'));
+    }
+
+    public function customFields(): void
+    {
+        $this->guard();
+        $fields = db()->query('SELECT * FROM client_custom_fields ORDER BY sort_order, id')->fetchAll();
+        echo $this->render('admin/custom_fields', ['title' => 'Özel Alanlar', 'fields' => $fields], 'admin');
+    }
+
+    public function customFieldAdd(): void
+    {
+        $this->guard(); $this->validateCsrf();
+        db()->prepare('INSERT INTO client_custom_fields (name, field_type, options, required) VALUES (?, ?, ?, ?)')
+            ->execute([trim($this->input('name', '')), $this->input('field_type', 'text'), $this->input('options', ''), (int)$this->input('required', 0)]);
+        flash('success', 'Özel alan eklendi.');
+        redirect(url('admin/custom-fields'));
+    }
+
+    public function customFieldDelete(string $id): void
+    {
+        $this->guard(); $this->validateCsrf();
+        db()->prepare('DELETE FROM client_custom_fields WHERE id = ?')->execute([$id]);
+        db()->prepare('DELETE FROM client_custom_values WHERE field_id = ?')->execute([$id]);
+        flash('success', 'Özel alan silindi.');
+        redirect(url('admin/custom-fields'));
+    }
+    public function cancellations(): void
+    {
+        $this->guard();
+        $requests = db()->query('SELECT cr.*, s.domain, u.first_name, u.last_name FROM cancellation_requests cr LEFT JOIN services s ON s.id = cr.service_id LEFT JOIN users u ON u.id = cr.user_id ORDER BY cr.id DESC')->fetchAll();
+        echo $this->render('admin/cancellations', ['title' => 'İptal Talepleri', 'requests' => $requests], 'admin');
+    }
+
+    public function cancellationApprove(string $id): void
+    {
+        $this->guard(); $this->validateCsrf();
+        $stmt = db()->prepare('SELECT * FROM cancellation_requests WHERE id = ?');
+        $stmt->execute([$id]);
+        $req = $stmt->fetch();
+        if ($req && $req['status'] === 'pending') {
+            db()->prepare('UPDATE cancellation_requests SET status = "approved" WHERE id = ?')->execute([$id]);
+            db()->prepare('UPDATE services SET status = "cancelled" WHERE id = ?')->execute([$req['service_id']]);
+            flash('success', 'İptal onaylandı, hizmet sonlandırıldı.');
+        }
+        redirect(url('admin/cancellations'));
+    }
+
+    public function cancellationDeny(string $id): void
+    {
+        $this->guard(); $this->validateCsrf();
+        db()->prepare('UPDATE cancellation_requests SET status = "denied" WHERE id = ?')->execute([$id]);
+        flash('info', 'İptal talebi reddedildi.');
+        redirect(url('admin/cancellations'));
+    }
+
+    public function massMail(): void
+    {
+        $this->guard();
+        $clientCount = (int)db()->query('SELECT COUNT(*) FROM users')->fetchColumn();
+        echo $this->render('admin/mass_mail', ['title' => 'Toplu E-posta', 'clientCount' => $clientCount], 'admin');
+    }
+
+    public function massMailSend(): void
+    {
+        $this->guard(); $this->validateCsrf();
+        $subject = trim($this->input('subject', ''));
+        $body = $this->input('body', '');
+        if ($subject === '' || $body === '') {
+            flash('error', 'Konu ve içerik zorunludur.');
+            redirect(url('admin/mass-mail'));
+        }
+        $users = db()->query('SELECT * FROM users WHERE status = "active"')->fetchAll();
+        $sent = 0;
+        foreach ($users as $u) {
+            $msg = \App\Core\Mailer::interpolate($body, [
+                'first_name' => $u['first_name'], 'last_name' => $u['last_name'],
+                'email' => $u['email'], 'site_name' => setting('site_name', 'RCVXTR'),
+            ]);
+            if (\App\Core\Mailer::send($u['email'], $subject, $msg)) $sent++;
+        }
+        flash('success', "Toplu e-posta gönderildi: {$sent}/" . count($users) . ' alıcı.');
+        redirect(url('admin/mass-mail'));
+    }
 }
 
 

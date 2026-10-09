@@ -228,3 +228,55 @@ if (!function_exists('netlen')) {
         return $api->isConfigured() ? $api : null;
     }
 }
+
+if (!function_exists('generate_referral_code')) {
+    function generate_referral_code(int $length = 10): string {
+        return strtoupper(substr(bin2hex(random_bytes(8)), 0, $length));
+    }
+}
+
+if (!function_exists('credit_affiliate')) {
+    /** Credit an affiliate when a referred user pays their first invoice. */
+    function credit_affiliate(int $referredUserId, float $amount, ?int $invoiceId = null): void {
+        $stmt = db()->prepare('SELECT referred_by FROM users WHERE id = ?');
+        $stmt->execute([$referredUserId]);
+        $affiliateId = (int)$stmt->fetchColumn();
+        if (!$affiliateId) return;
+
+        if ($invoiceId) {
+            $stmt = db()->prepare('SELECT id FROM affiliate_commissions WHERE referred_user_id = ? AND invoice_id = ?');
+            $stmt->execute([$referredUserId, $invoiceId]);
+            if ($stmt->fetch()) return; // already credited
+        }
+
+        $rate = (float)setting('affiliate_rate', 10);
+        $commission = round($amount * $rate / 100, 2);
+        if ($commission <= 0) return;
+
+        db()->prepare('INSERT INTO affiliate_commissions (affiliate_id, referred_user_id, invoice_id, amount, status) VALUES (?, ?, ?, ?, "pending")')
+            ->execute([$affiliateId, $referredUserId, $invoiceId, $commission]);
+        db()->prepare('UPDATE users SET affiliate_balance = affiliate_balance + ? WHERE id = ?')->execute([$commission, $affiliateId]);
+    }
+}
+
+if (!function_exists('validate_promo')) {
+    /** Validate a promo code; returns promo row + computed discount for a given amount. */
+    function validate_promo(string $code, float $amount): array {
+        $code = strtoupper(trim($code));
+        if ($code === '') return ['valid' => false, 'message' => ''];
+        $stmt = db()->prepare('SELECT * FROM promotions WHERE code = ? AND status = 1');
+        $stmt->execute([$code]);
+        $promo = $stmt->fetch();
+        if (!$promo) return ['valid' => false, 'message' => 'Geçersiz kupon kodu.'];
+        $today = date('Y-m-d');
+        if ($promo['valid_from'] && $promo['valid_from'] > $today) return ['valid' => false, 'message' => 'Kupon henüz geçerli değil.'];
+        if ($promo['valid_until'] && $promo['valid_until'] < $today) return ['valid' => false, 'message' => 'Kupon süresi dolmuş.'];
+        if ($promo['max_uses'] > 0 && (int)$promo['used'] >= (int)$promo['max_uses']) return ['valid' => false, 'message' => 'Kupon kullanım limiti dolmuş.'];
+
+        $discount = $promo['discount_type'] === 'percent'
+            ? round($amount * (float)$promo['discount_value'] / 100, 2)
+            : min((float)$promo['discount_value'], $amount);
+
+        return ['valid' => true, 'promo' => $promo, 'discount' => $discount];
+    }
+}

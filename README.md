@@ -22,7 +22,9 @@ WHMCS ve WiseCP tarzında, saf PHP ile yazılmış (framework'siz, düz `.php` d
 - Faturalar (manuel fatura, ödendi işaretleme, silme)
 - Destek biletleri (yanıtlama, durum yönetimi, departman/öncelik)
 - Alan adları (kayıt firması, DNS, süre yönetimi)
-- Ödeme yöntemleri (Stripe, PayPal, Havale/EFT — genişletilebilir)
+- Ödeme yöntemleri (PayTR, iyzico, Havale/EFT — genişletilebilir)
+- **Banka Hesapları** (banka seçimi + IBAN/host/şube yönetimi)
+- **Ödeme Logları** (tüm ödeme işlemlerinin şeffaf kaydı)
 - Modüller & entegrasyonlar (cPanel, Plesk, Domain Registrar, SMTP)
 - Genel ayarlar (site adı, tema, para birimi, KDV, fatura öneki, API aç/kapa, kayıt izni, bakım modu)
 - Raporlar (aylık gelir, ödeme yöntemine göre dağılım)
@@ -32,6 +34,9 @@ WHMCS ve WiseCP tarzında, saf PHP ile yazılmış (framework'siz, düz `.php` d
 - Bakiye ile ürün/hizmet satın alma
 - DNS yönetimi (alan adları için)
 - **API Erişimi**: API key + auth key oluşturma, IP izin listesi, izin (permission) seçimi
+- **Kayıtlı Kartlar**: kart saklama (PayTR / iyzico token), varsayılan kart, silme
+- **Ödeme Geçmişi**: tüm ödeme işlemlerinin şeffaf görünümü
+- **Otomatik Ödeme (abonelik)**: hizmet bazında aç/kapat + kart seçimi
 
 ### REST API (`/api/v1/...`)
 - Kimlik doğrulama: `X-Api-Key` + `X-Auth-Key` başlıkları (veya `Authorization: Bearer`)
@@ -83,3 +88,34 @@ curl -X POST -H "X-Api-Key: rcvx_..." -H "Content-Type: application/json" \
 
 ## Demo Verisi (opsiyonel)
 `php storage/seed-demo.php` çalıştırarak örnek ürünler ve bir demo müşteri ekleyebilirsiniz.
+
+## Ödeme Sistemi
+
+### Ödeme Kuruluşları (POS)
+- **PayTR** — `merchant_id`, `merchant_key`, `merchant_salt`, test/canlı mod
+- **iyzico** — `api_key`, `secret_key`, sandbox/canlı mod
+- **Havale / EFT** — banka hesapları (IBAN) + "ödeme yaptım" bildirimi + admin onayı
+
+> Kart bilgileri asla sisteminizde saklanmaz — yalnızca ödeme kuruluşundan dönen **token** tutulur (PCI uyumlu).
+
+### Kart Saklama
+- Müşteri paneli → Kartlarım → kart ekle (PayTR/iyzico token oluşturur)
+- Varsayılan kart belirleme, silme
+
+### Otomatik Ödeme (Abonelik)
+- Hizmet detayında müşteri "Otomatik Ödeme"yi açıp kart seçer
+- Ödeme tarihi geldiğinde sistem otomatik fatura keser ve kayıtlı karttan çeker
+- Cron: `GET /cron/billing?key=<cron_secret>` (gizli anahtar admin → Ayarlar'da değil, `settings` tablosunda `cron_secret`)
+- Crontab örneği (günde bir):
+  ```
+  0 * * * * curl -s "https://site.com/cron/billing?key=GIZLI_ANAHTAR" > /dev/null
+  ```
+
+### Ödeme Logları
+- Tüm işlemler loglanır: kart kaydetme/silme, ödeme denemesi, başarılı/başarısız ödeme, otomatik ödeme, havale onay/ret
+- Admin → **Ödeme Logları** (tüm kullanıcılar) ve Müşteri → **Ödeme Geçmişi** (kendi kayıtları)
+- Loglar: işlem tipi, tutar, kuruluş, referans, durum, IP, tarih
+
+### Test / Canlı Mod
+- Test/sandbox modunda gerçek para çekilmez; ödemeler simüle edilir (geliştirme için idealdir)
+- Canlıya geçmek için gerçek API bilgilerini girip modu "Canlı" yapın

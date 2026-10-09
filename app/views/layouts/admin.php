@@ -29,6 +29,8 @@
             <a href="<?= url('admin/tickets') ?>" class="<?= active_nav('/admin/tickets') ?>"><span class="ico">✉</span> Biletler</a>
             <div class="section-label">Sistem</div>
             <a href="<?= url('admin/payments') ?>" class="<?= active_nav('/admin/payments') ?>"><span class="ico">💳</span> Ödemeler</a>
+            <a href="<?= url('admin/bank-accounts') ?>" class="<?= active_nav('/admin/bank-accounts') ?>"><span class="ico">🏦</span> Banka Hesapları</a>
+            <a href="<?= url('admin/payment-logs') ?>" class="<?= active_nav('/admin/payment-logs') ?>"><span class="ico">↺</span> Ödeme Logları</a>
             <a href="<?= url('admin/modules') ?>" class="<?= active_nav('/admin/modules') ?>"><span class="ico">⬡</span> Modüller</a>
             <a href="<?= url('admin/settings') ?>" class="<?= active_nav('/admin/settings') ?>"><span class="ico">⚙</span> Ayarlar</a>
         </nav>

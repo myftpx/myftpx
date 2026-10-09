@@ -52,6 +52,15 @@ $router->get('/client/profile', [ClientController::class, 'profile']);
 $router->post('/client/profile', [ClientController::class, 'profileSave']);
 $router->post('/client/profile/password', [ClientController::class, 'profilePassword']);
 
+// ---- Client: saved cards, bank transfer & payment logs ----
+$router->get('/client/cards', [ClientController::class, 'cards']);
+$router->post('/client/cards/add', [ClientController::class, 'cardAdd']);
+$router->post('/client/cards/{id}/delete', [ClientController::class, 'cardDelete']);
+$router->post('/client/cards/{id}/default', [ClientController::class, 'cardDefault']);
+$router->get('/client/payments', [ClientController::class, 'paymentLogs']);
+$router->post('/client/invoices/{id}/bank-transfer', [ClientController::class, 'bankTransfer']);
+$router->post('/client/services/{id}/autorenew', [ClientController::class, 'serviceAutorenew']);
+
 // ---- Admin: auth & dashboard ----
 $router->get('/admin/login', [AdminController::class, 'showLogin']);
 $router->post('/admin/login', [AdminController::class, 'login']);
@@ -111,6 +120,18 @@ $router->post('/admin/modules/{code}', [AdminController::class, 'modulesSave']);
 $router->get('/admin/settings', [AdminController::class, 'settings']);
 $router->post('/admin/settings', [AdminController::class, 'settingsSave']);
 $router->get('/admin/reports', [AdminController::class, 'reports']);
+
+// ---- Admin: bank accounts & payment logs ----
+$router->get('/admin/bank-accounts', [AdminController::class, 'bankAccounts']);
+$router->post('/admin/bank-accounts/add', [AdminController::class, 'bankAccountAdd']);
+$router->post('/admin/bank-accounts/{id}/delete', [AdminController::class, 'bankAccountDelete']);
+$router->post('/admin/bank-accounts/{id}/toggle', [AdminController::class, 'bankAccountToggle']);
+$router->get('/admin/payment-logs', [AdminController::class, 'paymentLogs']);
+$router->post('/admin/transactions/{id}/confirm', [AdminController::class, 'transactionConfirm']);
+$router->post('/admin/transactions/{id}/deny', [AdminController::class, 'transactionDeny']);
+
+// ---- Cron ----
+$router->get('/cron/billing', [App\Controllers\CronController::class, 'billing']);
 
 // ---- API ----
 $router->all('/api/v1/{resource}', [ApiController::class, 'handle']);

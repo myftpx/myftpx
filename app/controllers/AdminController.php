@@ -545,6 +545,84 @@ class AdminController extends Controller
         $byGateway = db()->query("SELECT gateway, COUNT(*) c, SUM(amount) s FROM transactions WHERE status='completed' GROUP BY gateway")->fetchAll();
         echo $this->render('admin/reports', ['title' => 'Raporlar', 'monthly' => $monthly, 'byGateway' => $byGateway], 'admin');
     }
+
+    public function bankAccounts(): void
+    {
+        $this->guard();
+        $accounts = db()->query('SELECT * FROM bank_accounts ORDER BY sort_order, id')->fetchAll();
+        echo $this->render('admin/bank_accounts', ['title' => 'Banka Hesapları', 'accounts' => $accounts], 'admin');
+    }
+
+    public function bankAccountAdd(): void
+    {
+        $this->guard(); $this->validateCsrf();
+        $stmt = db()->prepare('INSERT INTO bank_accounts (bank_name, account_holder, iban, account_no, branch_code) VALUES (?, ?, ?, ?, ?)');
+        $stmt->execute([
+            trim($this->input('bank_name', '')),
+            trim($this->input('account_holder', '')),
+            trim($this->input('iban', '')),
+            trim($this->input('account_no', '')),
+            trim($this->input('branch_code', '')),
+        ]);
+        flash('success', 'Banka hesabı eklendi.');
+        redirect(url('admin/bank-accounts'));
+    }
+
+    public function bankAccountDelete(string $id): void
+    {
+        $this->guard(); $this->validateCsrf();
+        db()->prepare('DELETE FROM bank_accounts WHERE id = ?')->execute([$id]);
+        flash('success', 'Banka hesabı silindi.');
+        redirect(url('admin/bank-accounts'));
+    }
+
+    public function bankAccountToggle(string $id): void
+    {
+        $this->guard(); $this->validateCsrf();
+        db()->prepare('UPDATE bank_accounts SET is_active = CASE WHEN is_active = 1 THEN 0 ELSE 1 END WHERE id = ?')->execute([$id]);
+        redirect(url('admin/bank-accounts'));
+    }
+
+    public function paymentLogs(): void
+    {
+        $this->guard();
+        $logs = db()->query('SELECT l.*, u.first_name, u.last_name, u.email FROM payment_logs l LEFT JOIN users u ON u.id = l.user_id ORDER BY l.id DESC LIMIT 500')->fetchAll();
+        echo $this->render('admin/payment_logs', ['title' => 'Ödeme Kayıtları (Loglar)', 'logs' => $logs], 'admin');
+    }
+
+    public function transactionConfirm(string $id): void
+    {
+        $this->guard(); $this->validateCsrf();
+        $stmt = db()->prepare('SELECT * FROM transactions WHERE id = ?');
+        $stmt->execute([$id]);
+        $tx = $stmt->fetch();
+        if ($tx && $tx['status'] === 'pending') {
+            db()->prepare('UPDATE transactions SET status = "completed" WHERE id = ?')->execute([$id]);
+            if ($tx['invoice_id']) {
+                (new StoreController())->markInvoicePaid((int)$tx['invoice_id'], $tx['gateway'] ?: 'bank_transfer');
+            } else {
+                // Balance top-up (no invoice) — credit the user's balance
+                db()->prepare('UPDATE users SET balance = balance + ? WHERE id = ?')->execute([$tx['amount'], $tx['user_id']]);
+            }
+            payment_log($tx['user_id'], $tx['invoice_id'], $tx['gateway'] ?: 'bank_transfer', 'bank_transfer.confirmed', 'success', 'Havale yönetici tarafından onaylandı.', (float)$tx['amount'], $tx['transaction_id']);
+            flash('success', 'Havale onaylandı' . ($tx['invoice_id'] ? ', fatura ödendi.' : ', bakiye eklendi.'));
+        }
+        redirect(url('admin/transactions'));
+    }
+
+    public function transactionDeny(string $id): void
+    {
+        $this->guard(); $this->validateCsrf();
+        $stmt = db()->prepare('SELECT * FROM transactions WHERE id = ?');
+        $stmt->execute([$id]);
+        $tx = $stmt->fetch();
+        if ($tx && $tx['status'] === 'pending') {
+            db()->prepare('UPDATE transactions SET status = "failed" WHERE id = ?')->execute([$id]);
+            payment_log($tx['user_id'], $tx['invoice_id'], $tx['gateway'] ?: 'bank_transfer', 'bank_transfer.denied', 'failed', 'Havale yönetici tarafından reddedildi.', (float)$tx['amount'], $tx['transaction_id']);
+            flash('info', 'Havale reddedildi.');
+        }
+        redirect(url('admin/transactions'));
+    }
 }
 
 

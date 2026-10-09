@@ -186,3 +186,20 @@ if (!function_exists('gravatar')) {
         return 'https://www.gravatar.com/avatar/' . $hash . '?s=' . $size . '&d=mp';
     }
 }
+
+if (!function_exists('gateway')) {
+    function gateway(string $code): ?\App\Gateways\Gateway {
+        return \App\Gateways\GatewayFactory::make($code);
+    }
+}
+
+if (!function_exists('payment_log')) {
+    function payment_log(?int $userId, ?int $invoiceId, string $gateway, string $action, string $status, string $message, float $amount = 0, string $reference = ''): void {
+        try {
+            $stmt = db()->prepare('INSERT INTO payment_logs (user_id, invoice_id, gateway, action, reference, amount, status, message, ip) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)');
+            $stmt->execute([$userId, $invoiceId, $gateway, $action, $reference, $amount, $status, $message, $_SERVER['REMOTE_ADDR'] ?? '']);
+        } catch (\Throwable $t) {
+            // ignore logging failures
+        }
+    }
+}

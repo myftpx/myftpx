@@ -28,6 +28,9 @@ if (!Database::isInstalled()) {
     redirect(dirname($_SERVER['SCRIPT_NAME'] ?? '/') . '/install');
 }
 
+// Idempotent schema migrations (new tables/columns/gateways)
+\App\Core\Schema::migrate(db());
+
 // Build routes
 $router = new Router();
 require __DIR__ . '/app/routes.php';

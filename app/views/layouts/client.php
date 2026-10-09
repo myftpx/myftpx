@@ -21,6 +21,8 @@
             <div class="section-label">Faturalama</div>
             <a href="<?= url('client/invoices') ?>" class="<?= active_nav('/client/invoices') ?>"><span class="ico">▤</span> Faturalarım</a>
             <a href="<?= url('client/balance') ?>" class="<?= active_nav('/client/balance') ?>"><span class="ico">◉</span> Bakiye</a>
+            <a href="<?= url('client/cards') ?>" class="<?= active_nav('/client/cards') ?>"><span class="ico">💳</span> Kartlarım</a>
+            <a href="<?= url('client/payments') ?>" class="<?= active_nav('/client/payments') ?>"><span class="ico">↺</span> Ödeme Geçmişi</a>
             <div class="section-label">Destek</div>
             <a href="<?= url('client/tickets') ?>" class="<?= active_nav('/client/tickets') ?>"><span class="ico">✉</span> Destek Biletleri</a>
             <div class="section-label">Geliştirici</div>

@@ -38,6 +38,17 @@
     </div>
 
     <div class="card mb-3" style="max-width:860px">
+        <div class="card-header"><h3>Otomatik Ödeme (Cron)</h3></div>
+        <div class="card-body">
+            <p class="text-muted mb-2">Otomatik ödemelerin çalışması için bu adresi cron/cronjob olarak zamanlayın (örn. her saat):</p>
+            <?php $cronSecret = setting('cron_secret', ''); ?>
+            <div class="key-box mb-2" id="cron-url"><?= e(url('cron/billing?key=' . $cronSecret)) ?></div>
+            <button class="btn btn-outline btn-sm" type="button" data-copy="#cron-url">Kopyala</button>
+            <div class="form-hint mt-2">Crontab örneği: <code class="mono">0 * * * * curl -s "<?= e(url('cron/billing?key=' . $cronSecret)) ?>" > /dev/null</code></div>
+        </div>
+    </div>
+
+    <div class="card mb-3" style="max-width:860px">
         <div class="card-header"><h3>Faturalama</h3></div>
         <div class="card-body">
             <div class="form-row-3">

@@ -11,7 +11,7 @@
     </div>
     <button class="btn btn-primary btn-block" type="submit">Doğrula</button>
 </form>
-<?php if (setting('mail_method') === 'log'): ?>
+<?php if (show_otp_on_screen()): ?>
     <?php
     $type = $mode === 'email' ? 'register' : 'login';
     $stmt = db()->prepare('SELECT code FROM otp_codes WHERE email = ? AND type = ? AND used = 0 ORDER BY id DESC LIMIT 1');
@@ -19,7 +19,7 @@
     $devCode = $stmt->fetchColumn();
     ?>
     <?php if ($devCode): ?>
-        <div class="alert alert-warning mt-2">Test modu — kodunuz: <strong><?= e($devCode) ?></strong> (mail yöntemi "Log" olarak ayarlı)</div>
+        <div class="alert alert-warning mt-2">Doğrulama kodunuz: <strong><?= e($devCode) ?></strong> <span class="small">(e-posta henüz yapılandırılmadığı için kod burada gösteriliyor)</span></div>
     <?php endif; ?>
 <?php endif; ?>
 <form method="post" action="<?= url('verify-resend') ?>" class="mt-2">

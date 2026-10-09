@@ -280,3 +280,19 @@ if (!function_exists('validate_promo')) {
         return ['valid' => true, 'promo' => $promo, 'discount' => $discount];
     }
 }
+
+if (!function_exists('mail_actually_configured')) {
+    /** True only when SMTP is enabled, host is set and method is smtp (real email delivery). */
+    function mail_actually_configured(): bool {
+        return setting('mail_method', 'php') === 'smtp'
+            && (int)setting('smtp_enabled', 0) === 1
+            && setting('smtp_host', '') !== '';
+    }
+}
+
+if (!function_exists('show_otp_on_screen')) {
+    /** Show OTP on screen as a fallback when email isn't actually deliverable. */
+    function show_otp_on_screen(): bool {
+        return !mail_actually_configured();
+    }
+}

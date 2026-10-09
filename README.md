@@ -20,13 +20,13 @@ WHMCS ve WiseCP tarzında, saf PHP ile yazılmış (framework'siz, düz `.php` d
 - Ürün/hizmet kataloğu (fiyat, dönem, kurulum ücreti, yapılandırma seçenekleri, modül atama, öne çıkarma)
 - Siparişler ve hizmetler (aktifleştirme, durdurma, sonlandırma)
 - Faturalar (manuel fatura, ödendi işaretleme, silme)
-- Destek biletleri (yanıtlama, durum yönetimi, departman/öncelik)
-- Alan adları (kayıt firması, DNS, süre yönetimi)
-- Ödeme yöntemleri (PayTR, iyzico, Havale/EFT — genişletilebilir)
-- **Banka Hesapları** (banka seçimi + IBAN/host/şube yönetimi)
-- **Ödeme Logları** (tüm ödeme işlemlerinin şeffaf kaydı)
+- Destek biletleri (yanıtlama, durum yönetimi, departman/öncelik, hazır yanıtlar)
+- Alan adları (kayıt firması, DNS, süre yönetimi) + **TLD fiyatlandırma**
+- **Ürün Eklentileri** + **Promosyon/Kupon Kodları**
+- Ödeme yöntemleri (PayTR, iyzico, Havale/EFT) + **Banka Hesapları** + **Ödeme Logları**
 - Modüller & entegrasyonlar (cPanel, Plesk, Domain Registrar, SMTP)
-- Genel ayarlar (site adı, tema, para birimi, KDV, fatura öneki, API aç/kapa, kayıt izni, bakım modu)
+- **Duyurular** + **Bilgi Bankası** (kategori + makale) + **E-posta Şablonları**
+- Genel ayarlar (site adı, tema, para birimi, KDV, fatura öneki, API, bakım modu)
 - Raporlar (aylık gelir, ödeme yöntemine göre dağılım)
 
 ### Müşteri Paneli (Client)
@@ -37,6 +37,16 @@ WHMCS ve WiseCP tarzında, saf PHP ile yazılmış (framework'siz, düz `.php` d
 - **Kayıtlı Kartlar**: kart saklama (PayTR / iyzico token), varsayılan kart, silme
 - **Ödeme Geçmişi**: tüm ödeme işlemlerinin şeffaf görünümü
 - **Otomatik Ödeme (abonelik)**: hizmet bazında aç/kapat + kart seçimi
+- **Alt Hesaplar / Kişiler** (sub-accounts)
+- **Teklifler** (quotes)
+- Bilet değerlendirme (rating)
+
+### Genel Site (Store)
+- Kurumsal ana sayfa (hero + domain arama + TLD fiyat + özellikler)
+- **Bilgi Bankası** (kategori + makale + arama)
+- **Duyurular**
+- **Alan adı arama + kayıt**
+- **Ağ Durumu** sayfası
 
 ### REST API (`/api/v1/...`)
 - Kimlik doğrulama: `X-Api-Key` + `X-Auth-Key` başlıkları (veya `Authorization: Bearer`)

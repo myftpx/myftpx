@@ -592,7 +592,7 @@ class AdminController extends Controller
     {
         $this->guard(); $this->validateCsrf();
         $keys = ['site_name', 'theme', 'currency', 'admin_email', 'tax_rate', 'invoice_prefix', 'default_language', 'api_enabled', 'allow_registration', 'maintenance_mode', 'support_email', 'terms_url', 'privacy_url',
-                 'smtp_host', 'smtp_port', 'smtp_user', 'smtp_pass', 'smtp_from_email', 'smtp_from_name', 'sms_gateway', 'sms_api_key', 'sms_api_secret', 'sms_sender'];
+                 'smtp_host', 'smtp_port', 'smtp_user', 'smtp_pass', 'smtp_from_email', 'smtp_from_name', 'sms_gateway', 'sms_api_key', 'sms_api_secret', 'sms_sender', 'mail_method'];
         foreach ($keys as $k) {
             set_setting($k, $this->input($k, ''));
         }
@@ -611,6 +611,20 @@ class AdminController extends Controller
         $monthly = db()->query("SELECT strftime('%Y-%m', paid_at) ym, SUM(total) s FROM invoices WHERE status='paid' AND paid_at IS NOT NULL GROUP BY ym ORDER BY ym DESC LIMIT 12")->fetchAll();
         $byGateway = db()->query("SELECT gateway, COUNT(*) c, SUM(amount) s FROM transactions WHERE status='completed' GROUP BY gateway")->fetchAll();
         echo $this->render('admin/reports', ['title' => 'Raporlar', 'monthly' => $monthly, 'byGateway' => $byGateway], 'admin');
+    }
+
+    public function testMail(): void
+    {
+        $this->guard(); $this->validateCsrf();
+        $email = trim($this->input('email', ''));
+        if ($email === '') {
+            $this->json(['success' => false, 'message' => 'E-posta girin.']);
+        }
+        $ok = \App\Core\Mailer::send($email, 'Test E-postası — ' . setting('site_name', 'RCVXTR'), "Bu bir test e-postasıdır.\n\nMail sisteminiz çalışıyor!");
+        if ($ok) {
+            $this->json(['success' => true, 'message' => 'E-posta gönderildi. Gelen kutusu/spam klasörünü kontrol edin.']);
+        }
+        $this->json(['success' => false, 'message' => 'Gönderilemedi. SMTP ayarlarını veya "Log" yöntemini deneyin.']);
     }
 
     public function bankAccounts(): void

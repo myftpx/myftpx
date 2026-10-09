@@ -11,6 +11,17 @@
     </div>
     <button class="btn btn-primary btn-block" type="submit">Doğrula</button>
 </form>
+<?php if (setting('mail_method') === 'log'): ?>
+    <?php
+    $type = $mode === 'email' ? 'register' : 'login';
+    $stmt = db()->prepare('SELECT code FROM otp_codes WHERE email = ? AND type = ? AND used = 0 ORDER BY id DESC LIMIT 1');
+    $stmt->execute([$email, $type]);
+    $devCode = $stmt->fetchColumn();
+    ?>
+    <?php if ($devCode): ?>
+        <div class="alert alert-warning mt-2">Test modu — kodunuz: <strong><?= e($devCode) ?></strong> (mail yöntemi "Log" olarak ayarlı)</div>
+    <?php endif; ?>
+<?php endif; ?>
 <form method="post" action="<?= url('verify-resend') ?>" class="mt-2">
     <?= csrf_field() ?>
     <button class="btn btn-outline btn-block btn-sm" type="submit">Kodu Tekrar Gönder</button>

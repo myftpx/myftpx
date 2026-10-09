@@ -5,6 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><?= e($title ?? setting('site_name', 'RCVXTR')) ?></title>
     <link rel="stylesheet" href="<?= asset('css/app.css') ?>">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>tailwind.config = { corePlugins: { preflight: false } }</script>
 </head>
 <body>
 <header class="store-header">

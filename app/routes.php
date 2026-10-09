@@ -157,6 +157,7 @@ $router->get('/admin/modules', [AdminController::class, 'modules']);
 $router->post('/admin/modules/{code}', [AdminController::class, 'modulesSave']);
 $router->get('/admin/settings', [AdminController::class, 'settings']);
 $router->post('/admin/settings', [AdminController::class, 'settingsSave']);
+$router->post('/admin/settings/test-mail', [AdminController::class, 'testMail']);
 $router->get('/admin/reports', [AdminController::class, 'reports']);
 
 // ---- Admin: bank accounts & payment logs ----

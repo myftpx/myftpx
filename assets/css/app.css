@@ -2,10 +2,11 @@
    Supports RCVXTRWHITE (light) and RCVXTRDARK (dark) via data-theme attribute. */
 
 :root {
-    --primary: #3b82f6;
-    --primary-hover: #2563eb;
-    --primary-soft: rgba(59, 130, 246, 0.12);
-    --accent: #6366f1;
+    --primary: #f58a0a;
+    --primary-hover: #ff9e2c;
+    --primary-soft: rgba(245, 138, 10, 0.12);
+    --accent: #477df6;
+    --accent-soft: rgba(71, 125, 246, 0.12);
     --success: #16a34a;
     --success-soft: rgba(22, 163, 74, 0.12);
     --danger: #dc2626;
@@ -43,13 +44,13 @@
     --text: #e5e9f2;
     --text-muted: #94a3b8;
 
-    --sidebar-bg: #0d1322;
+    --sidebar-bg: #07111f;
     --sidebar-text: #94a3b8;
     --sidebar-active: #ffffff;
 
-    --primary: #3b82f6;
-    --primary-hover: #60a5fa;
-    --primary-soft: rgba(59, 130, 246, 0.2);
+    --primary: #f58a0a;
+    --primary-hover: #ff9e2c;
+    --primary-soft: rgba(245, 138, 10, 0.2);
 
     --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
     --shadow: 0 1px 3px rgba(0, 0, 0, 0.5), 0 4px 18px rgba(0, 0, 0, 0.4);
@@ -394,3 +395,27 @@ body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Robo
 .mega-col h4 { font-size: 12px; text-transform: uppercase; letter-spacing: .05em; color: var(--text-muted); margin-bottom: 8px; }
 .mega-col a { display: block; padding: 4px 0; font-size: 13px; color: var(--text); }
 .mega-col a:hover { color: var(--primary); }
+
+/* ===== verixo-style dark store header ===== */
+.store-header {
+    background: #07111f;
+    border-bottom: 1px solid #14345f;
+}
+.store-nav .brand { color: #fff; }
+.store-nav .brand:hover { color: #fff; }
+.store-nav-links a { color: #cbd5e1; }
+.store-nav-links a:hover { color: #fff; background: rgba(255,255,255,.06); }
+.store-nav-links a.active { color: var(--primary); background: rgba(245,138,10,.12); }
+.store-nav-links .btn-primary { color: #fff; }
+.mega-menu { background: #0d1d34; border-color: #14345f; }
+.mega-col a { color: #cbd5e1; }
+.mega-col a:hover { color: var(--primary); }
+.mega-col h4 { color: #6f7f95; }
+
+/* hero dark navy like verixo */
+.hero {
+    background: radial-gradient(900px 400px at 50% -80px, rgba(71,125,246,.18), transparent), #07111f;
+    color: #fff;
+}
+.hero h1 { color: #fff; }
+.hero p { color: #cbd5e1; }

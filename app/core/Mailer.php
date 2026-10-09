@@ -15,26 +15,37 @@ class Mailer
     {
         $fromEmail = $fromEmail ?: setting('smtp_from_email', setting('admin_email', 'noreply@localhost'));
         $fromName = $fromName ?: setting('smtp_from_name', setting('site_name', 'RCVXTR'));
+        $method = setting('mail_method', 'php');
 
-        if (!self::isConfigured()) {
-            // Fallback to PHP mail()
+        // Always log a copy for debugging / audit
+        self::logMail($to, $subject, $body, $method);
+
+        try {
+            if ($method === 'log') {
+                return true; // dev/test mode: only log
+            }
+            if ($method === 'smtp' && self::isConfigured()) {
+                return self::smtpSend(setting('smtp_host'), (int)setting('smtp_port', 587), setting('smtp_encryption', 'tls'), setting('smtp_user', ''), setting('smtp_pass', ''), $fromEmail, $fromName, $to, $subject, $body);
+            }
+            // fallback to PHP mail()
             $headers = 'From: ' . $fromName . ' <' . $fromEmail . ">\r\n" .
                        'MIME-Version: 1.0' . "\r\n" .
                        'Content-Type: text/plain; charset=UTF-8';
             return @mail($to, '=?UTF-8?B?' . base64_encode($subject) . '?=', $body, $headers);
-        }
-
-        $host = setting('smtp_host');
-        $port = (int)setting('smtp_port', 587);
-        $user = setting('smtp_user', '');
-        $pass = setting('smtp_pass', '');
-        $encryption = setting('smtp_encryption', 'tls');
-
-        try {
-            return self::smtpSend($host, $port, $encryption, $user, $pass, $fromEmail, $fromName, $to, $subject, $body);
         } catch (\Throwable $t) {
             error_log('Mailer error: ' . $t->getMessage());
             return false;
+        }
+    }
+
+    private static function logMail(string $to, string $subject, string $body, string $method): void
+    {
+        try {
+            $dir = dirname(__DIR__, 2) . '/storage/logs';
+            if (!is_dir($dir)) @mkdir($dir, 0755, true);
+            @file_put_contents($dir . '/mail.log', '[' . date('Y-m-d H:i:s') . "] TO: {$to} | METHOD: {$method} | SUBJECT: {$subject}\n" . $body . "\n\n", FILE_APPEND);
+        } catch (\Throwable $t) {
+            // ignore
         }
     }
 

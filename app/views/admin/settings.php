@@ -69,6 +69,22 @@
         <div class="card-header"><h3>E-posta (SMTP) & SMS/WhatsApp</h3></div>
         <div class="card-body">
             <div class="form-row">
+                <div class="form-group"><label>Gönderim Yöntemi</label>
+                    <select class="form-control" name="mail_method">
+                        <option value="php" <?= setting('mail_method') === 'php' ? 'selected' : '' ?>>PHP mail()</option>
+                        <option value="smtp" <?= setting('mail_method') === 'smtp' ? 'selected' : '' ?>>SMTP</option>
+                        <option value="log" <?= setting('mail_method') === 'log' ? 'selected' : '' ?>>Log (test/yerel — e-posta gönderilmez)</option>
+                    </select>
+                    <div class="form-hint">E-posta almıyorsanız "Log" seçin; kodlar <code class="mono">storage/logs/mail.log</code> dosyasına yazılır.</div>
+                </div>
+                <div class="form-group"><label>Test E-postası Gönder</label>
+                    <div class="flex gap-2 items-center" style="margin-top:4px">
+                        <input class="form-control" id="test-email" placeholder="ornek@mail.com">
+                        <button class="btn btn-outline" type="button" onclick="sendTestMail()">Test</button>
+                    </div>
+                </div>
+            </div>
+            <div class="form-row">
                 <div class="form-group"><label>SMTP Host</label><input class="form-control" name="smtp_host" value="<?= e(setting('smtp_host')) ?>"></div>
                 <div class="form-group"><label>SMTP Port</label><input class="form-control" name="smtp_port" value="<?= e(setting('smtp_port', '587')) ?>"></div>
             </div>
@@ -114,3 +130,16 @@
 
     <button class="btn btn-primary btn-lg" type="submit">Ayarları Kaydet</button>
 </form>
+
+<script>
+function sendTestMail() {
+    var email = document.getElementById('test-email').value;
+    if (!email) { alert('E-posta girin.'); return; }
+    var token = document.querySelector('input[name="_token"]').value;
+    fetch('<?= url('admin/settings/test-mail') ?>', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'X-CSRF-TOKEN': token },
+        body: '_token=' + encodeURIComponent(token) + '&email=' + encodeURIComponent(email)
+    }).then(r => r.json()).then(d => { alert(d.message); }).catch(e => alert('Hata: ' + e));
+}
+</script>

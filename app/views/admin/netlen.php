@@ -29,7 +29,7 @@
     <div class="card-header"><h3>Netlen Alan Adları</h3><span class="text-muted small"><?= is_array($domains) ? count($domains) . ' adet' : '' ?></span></div>
     <div class="table-wrap"><table class="table">
         <tr><th>Alan Adı</th><th>TLD</th><th>Durum</th><th>Bitiş</th></tr>
-        <?php if (empty($domains)): ?><tr><td colspan="4" class="empty"><?= (int)setting('netlen_enabled') ? 'API'den alan adı alınamadı.' : 'Modül etkin değil. API anahtarını girin.' ?></td></tr><?php endif; ?>
+        <?php if (empty($domains)): ?><tr><td colspan="4" class="empty"><?= (int)setting('netlen_enabled') ? 'API üzerinden alan adı alınamadı.' : 'Modül etkin değil. API anahtarını girin.' ?></td></tr><?php endif; ?>
         <?php foreach ((array)$domains as $d): ?>
             <tr><td><strong><?= e($d['domain'] ?? ($d['name'] ?? '')) ?></strong></td><td><?= e($d['tld'] ?? '') ?></td><td><?= e($d['status'] ?? '') ?></td><td><?= e($d['expires_at'] ?? ($d['expiry_date'] ?? '')) ?></td></tr>
         <?php endforeach; ?>

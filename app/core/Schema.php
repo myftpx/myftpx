@@ -229,7 +229,7 @@ class Schema
 
         // Default settings (SMTP / SMS / Netlen registrar)
         $defaults = [
-            'smtp_enabled' => '0', 'smtp_host' => '', 'smtp_port' => '587', 'smtp_user' => '', 'smtp_pass' => '', 'smtp_encryption' => 'tls', 'smtp_from_email' => '', 'smtp_from_name' => '',
+            'smtp_enabled' => '0', 'smtp_host' => '', 'smtp_port' => '587', 'smtp_user' => '', 'smtp_pass' => '', 'smtp_encryption' => 'tls', 'smtp_from_email' => '', 'smtp_from_name' => '', 'mail_method' => 'php',
             'sms_enabled' => '0', 'sms_gateway' => 'whatsapp', 'sms_api_key' => '', 'sms_api_secret' => '', 'sms_sender' => '',
             'netlen_enabled' => '0', 'netlen_api_key' => '', 'netlen_api_url' => 'https://api.netlen.com.tr/v2', 'netlen_ns1' => 'ns1.netlen.com.tr', 'netlen_ns2' => 'ns2.netlen.com.tr',
             'affiliate_enabled' => '1', 'affiliate_rate' => '10', 'affiliate_payout_min' => '50',

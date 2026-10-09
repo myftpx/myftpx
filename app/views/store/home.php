@@ -29,23 +29,36 @@
         <div class="feature"><div class="fico">💰</div><h3>Para İade Garantisi</h3><p>30 gün içinde koşulsuz iade.</p></div>
     </div>
 
+    <?php
+    $catIcons = ['Web Hosting' => '🌐', 'VPS' => '⚡', 'Sunucu' => '🖥', 'Reseller' => '📦', 'Alan Adı' => '⛓', 'SSL' => '🔒', 'Genel' => '📦'];
+    ?>
+    <h2 class="section-title" id="products">Hizmetlerimiz</h2>
+    <p class="section-sub">İhtiyacınıza uygun, şeffaf fiyatlı çözümler.</p>
+
     <?php foreach ($categories as $cat => $items): ?>
-        <h2 class="section-title" id="products"><?= e($cat) ?></h2>
-        <div class="pricing-grid">
-            <?php foreach ($items as $p): ?>
-                <div class="pricing-card <?= $p['featured'] ? 'featured' : '' ?>">
-                    <?php if ($p['featured']): ?><span class="tag">Öne Çıkan</span><?php endif; ?>
-                    <div class="name"><?= e($p['name']) ?></div>
-                    <div class="price"><?= money($p['price']) ?></div>
-                    <div class="cycle">/ <?= e(['monthly' => 'aylık', 'quarterly' => '3 aylık', 'annually' => 'yıllık'][$p['billing_cycle']] ?? $p['billing_cycle']) ?></div>
-                    <ul class="features">
-                        <li>Ücretsiz SSL sertifikası</li>
-                        <li>%99.9 uptime garantisi</li>
-                        <li>7/24 teknik destek</li>
-                    </ul>
-                    <a class="btn btn-primary btn-block" href="<?= url('store/product/' . $p['slug']) ?>">Sipariş Ver</a>
-                </div>
-            <?php endforeach; ?>
+        <div class="card mt-3" style="border:1px solid var(--border);overflow:hidden">
+            <div class="card-header" style="background:var(--surface-2)">
+                <h3 style="display:flex;align-items:center;gap:10px">
+                    <span><?= $catIcons[$cat] ?? '📦' ?></span> <?= e($cat) ?>
+                </h3>
+                <a class="btn btn-outline btn-sm" href="<?= url('store/category/' . urlencode($cat)) ?>">Tümünü Gör →</a>
+            </div>
+            <div class="card-body">
+                <div class="table-wrap"><table class="table">
+                    <tr>
+                        <th>Paket</th><th>Fiyat</th><th>Dönem</th><th>Öne Çıkan Özellikler</th><th></th>
+                    </tr>
+                    <?php foreach ($items as $p): ?>
+                        <tr>
+                            <td><strong><?= e($p['name']) ?></strong><?= $p['featured'] ? ' <span class="badge badge-primary">Öne Çıkan</span>' : '' ?></td>
+                            <td class="nowrap"><strong><?= money($p['price']) ?></strong></td>
+                            <td><?= e(['monthly' => 'Aylık', 'quarterly' => '3 Aylık', 'semi_annual' => '6 Aylık', 'annually' => 'Yıllık', 'biennially' => '2 Yıllık'][$p['billing_cycle']] ?? $p['billing_cycle']) ?></td>
+                            <td class="text-muted"><?= e(mb_substr(strip_tags($p['description']), 0, 90)) ?></td>
+                            <td><a class="btn btn-primary btn-sm" href="<?= url('store/product/' . $p['slug']) ?>">İncele & Sipariş</a></td>
+                        </tr>
+                    <?php endforeach; ?>
+                </table></div>
+            </div>
         </div>
     <?php endforeach; ?>
 

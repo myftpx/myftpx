@@ -608,7 +608,12 @@ class AdminController extends Controller
     public function reports(): void
     {
         $this->guard();
-        $monthly = db()->query("SELECT strftime('%Y-%m', paid_at) ym, SUM(total) s FROM invoices WHERE status='paid' AND paid_at IS NOT NULL GROUP BY ym ORDER BY ym DESC LIMIT 12")->fetchAll();
+        $driver = db()->getAttribute(\PDO::ATTR_DRIVER_NAME);
+        if ($driver === 'mysql') {
+            $monthly = db()->query("SELECT DATE_FORMAT(paid_at, '%Y-%m') ym, SUM(total) s FROM invoices WHERE status='paid' AND paid_at IS NOT NULL GROUP BY ym ORDER BY ym DESC LIMIT 12")->fetchAll();
+        } else {
+            $monthly = db()->query("SELECT strftime('%Y-%m', paid_at) ym, SUM(total) s FROM invoices WHERE status='paid' AND paid_at IS NOT NULL GROUP BY ym ORDER BY ym DESC LIMIT 12")->fetchAll();
+        }
         $byGateway = db()->query("SELECT gateway, COUNT(*) c, SUM(amount) s FROM transactions WHERE status='completed' GROUP BY gateway")->fetchAll();
         echo $this->render('admin/reports', ['title' => 'Raporlar', 'monthly' => $monthly, 'byGateway' => $byGateway], 'admin');
     }
@@ -780,8 +785,12 @@ class AdminController extends Controller
     {
         $this->guard(); $this->validateCsrf();
         $tld = '.' . ltrim(trim($this->input('tld', '')), '.');
-        db()->prepare('INSERT OR IGNORE INTO tld_pricing (tld, register_price, transfer_price, renew_price, status) VALUES (?, ?, ?, ?, ?)')
-            ->execute([$tld, (float)$this->input('register_price', 0), (float)$this->input('transfer_price', 0), (float)$this->input('renew_price', 0), 1]);
+        $stmt = db()->prepare('SELECT id FROM tld_pricing WHERE tld = ?');
+        $stmt->execute([$tld]);
+        if (!$stmt->fetch()) {
+            db()->prepare('INSERT INTO tld_pricing (tld, register_price, transfer_price, renew_price, status) VALUES (?, ?, ?, ?, 1)')
+                ->execute([$tld, (float)$this->input('register_price', 0), (float)$this->input('transfer_price', 0), (float)$this->input('renew_price', 0)]);
+        }
         flash('success', 'TLD eklendi.');
         redirect(url('admin/tld'));
     }
@@ -941,7 +950,8 @@ class AdminController extends Controller
     public function netlen(): void
     {
         $this->guard();
-        $localDomains = db()->query("SELECT * FROM domains WHERE registrar = 'netlen' ORDER BY id DESC")->fetchAll();
+        $localDomains = db()->query("SELECT d.*, u.first_name, u.last_name, u.email FROM domains d LEFT JOIN users u ON u.id = d.user_id WHERE d.registrar = 'netlen' ORDER BY d.id DESC")->fetchAll();
+        $clients = db()->query('SELECT id, first_name, last_name, email FROM users ORDER BY first_name')->fetchAll();
         $balance = null;
         $domains = null;
         $error = null;
@@ -953,7 +963,29 @@ class AdminController extends Controller
             if ($d['success']) $domains = $d['data'];
             else $error = $d['message'];
         }
-        echo $this->render('admin/netlen', ['title' => 'Netlen Bayilik (Domain)', 'localDomains' => $localDomains, 'balance' => $balance, 'domains' => $domains, 'error' => $error], 'admin');
+        echo $this->render('admin/netlen', ['title' => 'Netlen Bayilik (Domain)', 'localDomains' => $localDomains, 'clients' => $clients, 'balance' => $balance, 'domains' => $domains, 'error' => $error], 'admin');
+    }
+
+    public function netlenAssign(): void
+    {
+        $this->guard(); $this->validateCsrf();
+        $domainId = (int)$this->input('domain_id', 0);
+        $userId = (int)$this->input('user_id', 0);
+        if ($domainId && $userId) {
+            db()->prepare('UPDATE domains SET user_id = ? WHERE id = ? AND registrar = "netlen"')->execute([$userId, $domainId]);
+            flash('success', 'Alan adı müşteriye tanımlandı.');
+        } else {
+            flash('error', 'Alan adı ve müşteri seçin.');
+        }
+        redirect(url('admin/netlen'));
+    }
+
+    public function netlenUnassign(string $id): void
+    {
+        $this->guard(); $this->validateCsrf();
+        db()->prepare('UPDATE domains SET user_id = 0 WHERE id = ? AND registrar = "netlen"')->execute([$id]);
+        flash('success', 'Alan adı tanımlaması kaldırıldı.');
+        redirect(url('admin/netlen'));
     }
 
     public function netlenSave(): void

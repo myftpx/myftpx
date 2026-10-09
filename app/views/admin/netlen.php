@@ -26,7 +26,45 @@
 </div>
 
 <div class="card mb-3">
-    <div class="card-header"><h3>Netlen Alan Adları</h3><span class="text-muted small"><?= is_array($domains) ? count($domains) . ' adet' : '' ?></span></div>
+    <div class="card-header"><h3>Tanımlı Alan Adları (Müşteriye Ata)</h3><span class="text-muted small">Senkronize edilen alan adlarını müşteri hesaplarına tanımlayın</span></div>
+    <div class="table-wrap"><table class="table">
+        <tr><th>Alan Adı</th><th>TLD</th><th>Durum</th><th>Mevcut Müşteri</th><th>Atama</th></tr>
+        <?php if (empty($localDomains)): ?><tr><td colspan="5" class="empty">Henüz senkronize edilmiş alan adı yok. "Alan Adlarını Senkronize Et" butonuna basın.</td></tr><?php endif; ?>
+        <?php foreach ($localDomains as $d): ?>
+            <tr>
+                <td><strong><?= e($d['domain']) ?></strong></td>
+                <td><?= e($d['tld'] ?: '—') ?></td>
+                <td><?= status_badge($d['status']) ?></td>
+                <td>
+                    <?php if ($d['user_id']): ?>
+                        <span class="badge badge-success"><?= e($d['first_name'] . ' ' . $d['last_name']) ?></span>
+                        <form method="post" action="<?= url('admin/netlen/' . $d['id'] . '/unassign') ?>" class="d-inline"><?= csrf_field() ?><button class="btn btn-outline btn-sm" type="submit">Kaldır</button></form>
+                    <?php else: ?>
+                        <span class="badge">Atanmamış</span>
+                    <?php endif; ?>
+                </td>
+                <td>
+                    <?php if (!$d['user_id']): ?>
+                        <form method="post" action="<?= url('admin/netlen/assign') ?>" class="flex gap-1">
+                            <?= csrf_field() ?>
+                            <input type="hidden" name="domain_id" value="<?= (int)$d['id'] ?>">
+                            <select class="form-control" name="user_id" style="min-width:200px" required>
+                                <option value="">— Müşteri seçin —</option>
+                                <?php foreach ($clients as $c): ?>
+                                    <option value="<?= (int)$c['id'] ?>"><?= e($c['first_name'] . ' ' . $c['last_name'] . ' (' . $c['email'] . ')') ?></option>
+                                <?php endforeach; ?>
+                            </select>
+                            <button class="btn btn-primary btn-sm" type="submit">Ata</button>
+                        </form>
+                    <?php endif; ?>
+                </td>
+            </tr>
+        <?php endforeach; ?>
+    </table></div>
+</div>
+
+<div class="card mb-3">
+    <div class="card-header"><h3>Netlen API Alan Adları</h3><span class="text-muted small"><?= is_array($domains) ? count($domains) . ' adet' : '' ?></span></div>
     <div class="table-wrap"><table class="table">
         <tr><th>Alan Adı</th><th>TLD</th><th>Durum</th><th>Bitiş</th></tr>
         <?php if (empty($domains)): ?><tr><td colspan="4" class="empty"><?= (int)setting('netlen_enabled') ? 'API üzerinden alan adı alınamadı.' : 'Modül etkin değil. API anahtarını girin.' ?></td></tr><?php endif; ?>

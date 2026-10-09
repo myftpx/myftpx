@@ -47,8 +47,13 @@ if (!function_exists('setting')) {
 
 if (!function_exists('set_setting')) {
     function set_setting(string $key, $value): void {
-        $stmt = db()->prepare('INSERT INTO settings (name, value) VALUES (?, ?) ON CONFLICT(name) DO UPDATE SET value = excluded.value');
-        $stmt->execute([$key, (string)$value]);
+        $stmt = db()->prepare('SELECT COUNT(*) FROM settings WHERE name = ?');
+        $stmt->execute([$key]);
+        if ((int)$stmt->fetchColumn() > 0) {
+            db()->prepare('UPDATE settings SET value = ? WHERE name = ?')->execute([(string)$value, $key]);
+        } else {
+            db()->prepare('INSERT INTO settings (name, value) VALUES (?, ?)')->execute([$key, (string)$value]);
+        }
     }
 }
 

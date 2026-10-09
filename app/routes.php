@@ -202,6 +202,8 @@ $router->get('/admin/netlen', [AdminController::class, 'netlen']);
 $router->post('/admin/netlen/save', [AdminController::class, 'netlenSave']);
 $router->post('/admin/netlen/sync', [AdminController::class, 'netlenSync']);
 $router->post('/admin/netlen/register', [AdminController::class, 'netlenRegister']);
+$router->post('/admin/netlen/assign', [AdminController::class, 'netlenAssign']);
+$router->post('/admin/netlen/{id}/unassign', [AdminController::class, 'netlenUnassign']);
 $router->get('/admin/affiliates', [AdminController::class, 'affiliates']);
 $router->post('/admin/affiliates/{id}/payout', [AdminController::class, 'affiliatePayout']);
 $router->get('/admin/downloads', [AdminController::class, 'downloads']);

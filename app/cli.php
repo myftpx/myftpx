@@ -26,7 +26,7 @@ $cmd = $argv[1] ?? 'help';
 
 switch ($cmd) {
     case 'otp:list':
-        $rows = db()->query('SELECT email, type, code, expires_at, used FROM otp_codes WHERE used = 0 AND expires_at > datetime("now") ORDER BY id DESC LIMIT 30')->fetchAll();
+        $rows = db()->query('SELECT email, type, code, expires_at, used FROM otp_codes WHERE used = 0 ORDER BY id DESC LIMIT 30')->fetchAll();
         if (!$rows) {
             echo "Bekleyen OTP kodu yok.\n";
         }

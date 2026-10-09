@@ -592,7 +592,7 @@ class AdminController extends Controller
     {
         $this->guard(); $this->validateCsrf();
         $keys = ['site_name', 'theme', 'currency', 'admin_email', 'tax_rate', 'invoice_prefix', 'default_language', 'api_enabled', 'allow_registration', 'maintenance_mode', 'support_email', 'terms_url', 'privacy_url',
-                 'smtp_host', 'smtp_port', 'smtp_user', 'smtp_pass', 'smtp_from_email', 'smtp_from_name', 'sms_gateway', 'sms_api_key', 'sms_api_secret', 'sms_sender', 'mail_method'];
+                 'smtp_host', 'smtp_port', 'smtp_user', 'smtp_pass', 'smtp_from_email', 'smtp_from_name', 'smtp_encryption', 'sms_gateway', 'sms_api_key', 'sms_api_secret', 'sms_sender', 'mail_method'];
         foreach ($keys as $k) {
             set_setting($k, $this->input($k, ''));
         }

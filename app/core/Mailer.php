@@ -74,8 +74,18 @@ class Mailer
     private static function smtpSend(string $host, int $port, string $encryption, string $user, string $pass, string $fromEmail, string $fromName, string $to, string $subject, string $body): bool
     {
         $remote = ($encryption === 'ssl' ? 'ssl://' : '') . $host;
-        $fp = @stream_socket_client("{$remote}:{$port}", $errno, $errstr, 20);
-        if (!$fp) return false;
+        // Allow self-signed / mismatched certs (common on DirectAdmin/shared hosting)
+        $ctx = stream_context_create(['ssl' => [
+            'verify_peer' => false,
+            'verify_peer_name' => false,
+            'allow_self_signed' => true,
+        ]]);
+        $fp = @stream_socket_client("{$remote}:{$port}", $errno, $errstr, 20, STREAM_CLIENT_CONNECT, $ctx);
+        if (!$fp) {
+            error_log('SMTP connect failed: ' . ($errstr ?: 'unknown'));
+            return false;
+        }
+        stream_set_timeout($fp, 20);
 
         $read = function () use ($fp) {
             $data = '';

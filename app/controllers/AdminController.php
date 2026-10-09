@@ -215,9 +215,9 @@ class AdminController extends Controller
 
     private function saveProduct(?int $id): void
     {
+        $name = trim($this->input('name', ''));
         $data = [
-            'name' => trim($this->input('name', '')),
-            'slug' => slug($this->input('name', '') . '-' . uniqid()),
+            'name' => $name,
             'description' => $this->input('description', ''),
             'category' => trim($this->input('category', '')),
             'type' => $this->input('type', 'hosting'),
@@ -231,12 +231,11 @@ class AdminController extends Controller
 
         if ($id === null) {
             $stmt = db()->prepare('INSERT INTO products (name, slug, description, category, type, price, setup_fee, billing_cycle, status, module, featured) VALUES (?,?,?,?,?,?,?,?,?,?,?)');
-            $stmt->execute(array_values($data));
+            $stmt->execute([$name, slug($name . '-' . uniqid()), $data['description'], $data['category'], $data['type'], $data['price'], $data['setup_fee'], $data['billing_cycle'], $data['status'], $data['module'], $data['featured']]);
             $id = (int)db()->lastInsertId();
         } else {
-            $data['id'] = $id;
-            $stmt = db()->prepare('UPDATE products SET name=?, slug=?, description=?, category=?, type=?, price=?, setup_fee=?, billing_cycle=?, status=?, module=?, featured=? WHERE id=?');
-            $stmt->execute(array_values($data));
+            $stmt = db()->prepare('UPDATE products SET name=?, description=?, category=?, type=?, price=?, setup_fee=?, billing_cycle=?, status=?, module=?, featured=? WHERE id=?');
+            $stmt->execute([$name, $data['description'], $data['category'], $data['type'], $data['price'], $data['setup_fee'], $data['billing_cycle'], $data['status'], $data['module'], $data['featured'], $id]);
         }
 
         // Config options

@@ -15,6 +15,8 @@
             <div class="section-label">Genel</div>
             <a href="<?= url('admin') ?>" class="<?= active_nav('/admin', true) ?>"><span class="ico">▦</span> Panel</a>
             <a href="<?= url('admin/reports') ?>" class="<?= active_nav('/admin/reports') ?>"><span class="ico">◔</span> Raporlar</a>
+            <a href="<?= url('admin/admins') ?>" class="<?= active_nav('/admin/admins') ?>"><span class="ico">🔐</span> Yöneticiler</a>
+            <a href="<?= url('admin/activity-log') ?>" class="<?= active_nav('/admin/activity-log') ?>"><span class="ico">🕒</span> Hareket Logu</a>
             <div class="section-label">Müşteriler</div>
             <a href="<?= url('admin/clients') ?>" class="<?= active_nav('/admin/clients') ?>"><span class="ico">👥</span> Müşteriler</a>
             <div class="section-label">Ürün & Hizmet</div>
@@ -35,11 +37,13 @@
             <a href="<?= url('admin/promotions') ?>" class="<?= active_nav('/admin/promotions') ?>"><span class="ico">🎟</span> Promosyonlar</a>
             <a href="<?= url('admin/predefined-replies') ?>" class="<?= active_nav('/admin/predefined-replies') ?>"><span class="ico">💬</span> Hazır Yanıtlar</a>
             <a href="<?= url('admin/email-templates') ?>" class="<?= active_nav('/admin/email-templates') ?>"><span class="ico">✉</span> E-posta Şablonları</a>
+            <a href="<?= url('admin/blog') ?>" class="<?= active_nav('/admin/blog') ?>"><span class="ico">📝</span> Blog</a>
             <div class="section-label">Sistem</div>
             <a href="<?= url('admin/payments') ?>" class="<?= active_nav('/admin/payments') ?>"><span class="ico">💳</span> Ödemeler</a>
             <a href="<?= url('admin/bank-accounts') ?>" class="<?= active_nav('/admin/bank-accounts') ?>"><span class="ico">🏦</span> Banka Hesapları</a>
             <a href="<?= url('admin/payment-logs') ?>" class="<?= active_nav('/admin/payment-logs') ?>"><span class="ico">↺</span> Ödeme Logları</a>
             <a href="<?= url('admin/modules') ?>" class="<?= active_nav('/admin/modules') ?>"><span class="ico">⬡</span> Modüller</a>
+            <a href="<?= url('admin/netlen') ?>" class="<?= active_nav('/admin/netlen') ?>"><span class="ico">⛓</span> Netlen Bayilik</a>
             <a href="<?= url('admin/settings') ?>" class="<?= active_nav('/admin/settings') ?>"><span class="ico">⚙</span> Ayarlar</a>
         </nav>
         <div class="side-user">

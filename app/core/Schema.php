@@ -11,7 +11,7 @@ class Schema
 
         $tables['settings'] = "CREATE TABLE IF NOT EXISTS settings (name VARCHAR(100) PRIMARY KEY, value TEXT)";
         $tables['admins'] = "CREATE TABLE IF NOT EXISTS admins (id {$autoinc}, name VARCHAR(150) NOT NULL, email VARCHAR(190) NOT NULL UNIQUE, password VARCHAR(255) NOT NULL, role VARCHAR(50) DEFAULT 'admin', last_login DATETIME NULL, created_at DATETIME DEFAULT CURRENT_TIMESTAMP)";
-        $tables['users'] = "CREATE TABLE IF NOT EXISTS users (id {$autoinc}, first_name VARCHAR(100) NOT NULL, last_name VARCHAR(100) NOT NULL, email VARCHAR(190) NOT NULL UNIQUE, password VARCHAR(255) NOT NULL, phone VARCHAR(50) DEFAULT '', company VARCHAR(150) DEFAULT '', address TEXT, city VARCHAR(100) DEFAULT '', country VARCHAR(100) DEFAULT '', postal_code VARCHAR(30) DEFAULT '', balance DECIMAL(15,2) DEFAULT 0, currency VARCHAR(10) DEFAULT 'TRY', status VARCHAR(20) DEFAULT 'active', email_verified TINYINT DEFAULT 0, created_at DATETIME DEFAULT CURRENT_TIMESTAMP)";
+        $tables['users'] = "CREATE TABLE IF NOT EXISTS users (id {$autoinc}, first_name VARCHAR(100) NOT NULL, last_name VARCHAR(100) NOT NULL, email VARCHAR(190) NOT NULL UNIQUE, password VARCHAR(255) NOT NULL, phone VARCHAR(50) DEFAULT '', company VARCHAR(150) DEFAULT '', account_type VARCHAR(20) DEFAULT 'individual', tc_no VARCHAR(20) DEFAULT '', tax_no VARCHAR(20) DEFAULT '', address TEXT, city VARCHAR(100) DEFAULT '', country VARCHAR(100) DEFAULT '', postal_code VARCHAR(30) DEFAULT '', balance DECIMAL(15,2) DEFAULT 0, currency VARCHAR(10) DEFAULT 'TRY', status VARCHAR(20) DEFAULT 'active', email_verified TINYINT DEFAULT 0, verified TINYINT DEFAULT 0, created_at DATETIME DEFAULT CURRENT_TIMESTAMP)";
         $tables['products'] = "CREATE TABLE IF NOT EXISTS products (id {$autoinc}, name VARCHAR(190) NOT NULL, slug VARCHAR(190) NOT NULL UNIQUE, description TEXT, category VARCHAR(100) DEFAULT '', type VARCHAR(50) DEFAULT 'hosting', price DECIMAL(15,2) DEFAULT 0, setup_fee DECIMAL(15,2) DEFAULT 0, billing_cycle VARCHAR(20) DEFAULT 'monthly', status VARCHAR(20) DEFAULT 'active', module VARCHAR(50) DEFAULT 'none', config TEXT, sort_order INT DEFAULT 0, featured TINYINT DEFAULT 0, created_at DATETIME DEFAULT CURRENT_TIMESTAMP)";
         $tables['product_config_options'] = "CREATE TABLE IF NOT EXISTS product_config_options (id {$autoinc}, product_id INT NOT NULL, name VARCHAR(190) NOT NULL, type VARCHAR(50) DEFAULT 'dropdown', options TEXT, required TINYINT DEFAULT 0, sort_order INT DEFAULT 0)";
         $tables['orders'] = "CREATE TABLE IF NOT EXISTS orders (id {$autoinc}, order_number VARCHAR(50) NOT NULL UNIQUE, user_id INT NOT NULL, product_id INT NOT NULL, billing_cycle VARCHAR(20) DEFAULT 'monthly', domain VARCHAR(190) DEFAULT '', config TEXT, amount DECIMAL(15,2) DEFAULT 0, status VARCHAR(20) DEFAULT 'pending', payment_method VARCHAR(50) DEFAULT '', created_at DATETIME DEFAULT CURRENT_TIMESTAMP)";
@@ -41,6 +41,9 @@ class Schema
         $tables['predefined_replies'] = "CREATE TABLE IF NOT EXISTS predefined_replies (id {$autoinc}, name VARCHAR(190) NOT NULL, body TEXT)";
         $tables['quotes'] = "CREATE TABLE IF NOT EXISTS quotes (id {$autoinc}, quote_number VARCHAR(50) NOT NULL UNIQUE, user_id INT NOT NULL, amount DECIMAL(15,2) DEFAULT 0, total DECIMAL(15,2) DEFAULT 0, status VARCHAR(20) DEFAULT 'pending', valid_until DATE NULL, created_at DATETIME DEFAULT CURRENT_TIMESTAMP)";
         $tables['quote_items'] = "CREATE TABLE IF NOT EXISTS quote_items (id {$autoinc}, quote_id INT NOT NULL, description VARCHAR(255) NOT NULL, amount DECIMAL(15,2) DEFAULT 0)";
+        $tables['blog_categories'] = "CREATE TABLE IF NOT EXISTS blog_categories (id {$autoinc}, name VARCHAR(190) NOT NULL, slug VARCHAR(190) DEFAULT '', sort_order INT DEFAULT 0)";
+        $tables['blog_posts'] = "CREATE TABLE IF NOT EXISTS blog_posts (id {$autoinc}, title VARCHAR(255) NOT NULL, slug VARCHAR(190) NOT NULL, category_id INT DEFAULT 0, excerpt TEXT, content TEXT, image VARCHAR(255) DEFAULT '', status TINYINT DEFAULT 1, views INT DEFAULT 0, seo_title VARCHAR(190) DEFAULT '', seo_description VARCHAR(255) DEFAULT '', published_at DATETIME DEFAULT CURRENT_TIMESTAMP, created_at DATETIME DEFAULT CURRENT_TIMESTAMP)";
+        $tables['otp_codes'] = "CREATE TABLE IF NOT EXISTS otp_codes (id {$autoinc}, email VARCHAR(190) NOT NULL, code VARCHAR(10) NOT NULL, type VARCHAR(30) DEFAULT 'email', expires_at DATETIME NOT NULL, used TINYINT DEFAULT 0, created_at DATETIME DEFAULT CURRENT_TIMESTAMP)";
 
         foreach ($tables as $sql) {
             $db->exec($sql);
@@ -120,6 +123,9 @@ class Schema
             'predefined_replies' => "CREATE TABLE IF NOT EXISTS predefined_replies (id {$autoinc}, name VARCHAR(190) NOT NULL, body TEXT)",
             'quotes' => "CREATE TABLE IF NOT EXISTS quotes (id {$autoinc}, quote_number VARCHAR(50) NOT NULL UNIQUE, user_id INT NOT NULL, amount DECIMAL(15,2) DEFAULT 0, total DECIMAL(15,2) DEFAULT 0, status VARCHAR(20) DEFAULT 'pending', valid_until DATE NULL, created_at DATETIME DEFAULT CURRENT_TIMESTAMP)",
             'quote_items' => "CREATE TABLE IF NOT EXISTS quote_items (id {$autoinc}, quote_id INT NOT NULL, description VARCHAR(255) NOT NULL, amount DECIMAL(15,2) DEFAULT 0)",
+            'blog_categories' => "CREATE TABLE IF NOT EXISTS blog_categories (id {$autoinc}, name VARCHAR(190) NOT NULL, slug VARCHAR(190) DEFAULT '', sort_order INT DEFAULT 0)",
+            'blog_posts' => "CREATE TABLE IF NOT EXISTS blog_posts (id {$autoinc}, title VARCHAR(255) NOT NULL, slug VARCHAR(190) NOT NULL, category_id INT DEFAULT 0, excerpt TEXT, content TEXT, image VARCHAR(255) DEFAULT '', status TINYINT DEFAULT 1, views INT DEFAULT 0, seo_title VARCHAR(190) DEFAULT '', seo_description VARCHAR(255) DEFAULT '', published_at DATETIME DEFAULT CURRENT_TIMESTAMP, created_at DATETIME DEFAULT CURRENT_TIMESTAMP)",
+            'otp_codes' => "CREATE TABLE IF NOT EXISTS otp_codes (id {$autoinc}, email VARCHAR(190) NOT NULL, code VARCHAR(10) NOT NULL, type VARCHAR(30) DEFAULT 'email', expires_at DATETIME NOT NULL, used TINYINT DEFAULT 0, created_at DATETIME DEFAULT CURRENT_TIMESTAMP)",
         ];
         foreach ($tables as $sql) {
             $db->exec($sql);
@@ -141,6 +147,14 @@ class Schema
         }
         if (!in_array('rating_comment', $tcols, true)) {
             $db->exec('ALTER TABLE tickets ADD COLUMN rating_comment TEXT');
+        }
+
+        // Missing columns on users (KYC / account type)
+        $ucols = self::columns($db, 'users');
+        foreach (['account_type' => "VARCHAR(20) DEFAULT 'individual'", 'tc_no' => "VARCHAR(20) DEFAULT ''", 'tax_no' => "VARCHAR(20) DEFAULT ''", 'verified' => 'TINYINT DEFAULT 0'] as $col => $def) {
+            if (!in_array($col, $ucols, true)) {
+                $db->exec("ALTER TABLE users ADD COLUMN {$col} {$def}");
+            }
         }
 
         // Missing gateways
@@ -185,6 +199,21 @@ class Schema
             $tlds = [['.com', 15.90, 15.90, 15.90], ['.net', 18.90, 18.90, 18.90], ['.org', 16.90, 16.90, 16.90], ['.info', 9.90, 9.90, 9.90], ['.xyz', 7.90, 7.90, 7.90], ['.co', 25.90, 25.90, 25.90], ['.io', 45.90, 45.90, 45.90], ['.dev', 22.90, 22.90, 22.90], ['.app', 24.90, 24.90, 24.90], ['.site', 8.90, 8.90, 8.90], ['.online', 8.90, 8.90, 8.90], ['.shop', 12.90, 12.90, 12.90]];
             foreach ($tlds as $t) {
                 $stmt->execute($t);
+            }
+        }
+
+        // Default settings (SMTP / SMS / Netlen registrar)
+        $defaults = [
+            'smtp_enabled' => '0', 'smtp_host' => '', 'smtp_port' => '587', 'smtp_user' => '', 'smtp_pass' => '', 'smtp_encryption' => 'tls', 'smtp_from_email' => '', 'smtp_from_name' => '',
+            'sms_enabled' => '0', 'sms_gateway' => 'whatsapp', 'sms_api_key' => '', 'sms_api_secret' => '', 'sms_sender' => '',
+            'netlen_enabled' => '0', 'netlen_api_key' => '', 'netlen_api_url' => 'https://api.netlen.com.tr/v2', 'netlen_ns1' => 'ns1.netlen.com.tr', 'netlen_ns2' => 'ns2.netlen.com.tr',
+        ];
+        $stmt = $db->prepare('SELECT COUNT(*) FROM settings WHERE name = ?');
+        $ins = $db->prepare('INSERT INTO settings (name, value) VALUES (?, ?)');
+        foreach ($defaults as $k => $v) {
+            $stmt->execute([$k]);
+            if ((int)$stmt->fetchColumn() === 0) {
+                $ins->execute([$k, $v]);
             }
         }
     }

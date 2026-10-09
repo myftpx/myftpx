@@ -27,8 +27,37 @@ class AuthController extends Controller
             flash('error', 'Hesabınız askıya alınmış durumda. Lütfen destek ile iletişime geçin.');
             redirect(url('login'));
         }
+
+        $code = \App\Core\Otp::generate($email, 'login');
+        \App\Core\Otp::deliver($email, $user['phone'] ?? '', $code);
+        $_SESSION['pending_login_email'] = $email;
+        flash('info', 'Giriş için doğrulama kodu e-posta adresinize gönderildi.');
+        redirect(url('verify-login'));
+    }
+
+    public function showVerifyLogin(): void
+    {
+        if (empty($_SESSION['pending_login_email'])) redirect(url('login'));
+        echo $this->render('auth/verify', ['title' => 'Giriş Doğrulama', 'mode' => 'login', 'email' => $_SESSION['pending_login_email']], 'auth');
+    }
+
+    public function verifyLogin(): void
+    {
+        $this->validateCsrf();
+        $email = $_SESSION['pending_login_email'] ?? '';
+        $code = trim($this->input('code', ''));
+        if ($email === '' || !\App\Core\Otp::verify($email, $code, 'login')) {
+            flash('error', 'Doğrulama kodu hatalı veya süresi dolmuş.');
+            redirect(url('verify-login'));
+        }
+        $stmt = db()->prepare('SELECT * FROM users WHERE email = ?');
+        $stmt->execute([$email]);
+        $user = $stmt->fetch();
+        unset($_SESSION['pending_login_email']);
+        if (!$user) redirect(url('login'));
+
         auth()->login($user);
-        $this->log('login', 'Müşteri girişi', (int)$user['id']);
+        $this->log('login', 'Müşteri girişi (OTP doğrulandı)', (int)$user['id']);
         flash('success', 'Hoş geldiniz, ' . $user['first_name'] . '!');
         redirect(url('client'));
     }
@@ -51,19 +80,32 @@ class AuthController extends Controller
         $email = trim($this->input('email', ''));
         $password = (string)$this->input('password', '');
         $password2 = (string)$this->input('password_confirm', '');
+        $accountType = $this->input('account_type', 'individual');
+        $tcNo = preg_replace('/\D/', '', $this->input('tc_no', ''));
+        $taxNo = preg_replace('/\D/', '', $this->input('tax_no', ''));
+        $company = trim($this->input('company', ''));
 
         if ($firstName === '' || $lastName === '' || !filter_var($email, FILTER_VALIDATE_EMAIL)) {
             flash('error', 'Lütfen tüm alanları doğru doldurun.');
             redirect(url('register'));
         }
-        if (strlen($password) < 6) {
-            flash('error', 'Şifre en az 6 karakter olmalıdır.');
+        if (strlen($password) < 6 || $password !== $password2) {
+            flash('error', 'Şifre en az 6 karakter olmalı ve eşleşmelidir.');
             redirect(url('register'));
         }
-        if ($password !== $password2) {
-            flash('error', 'Şifreler eşleşmiyor.');
-            redirect(url('register'));
+
+        if ($accountType === 'corporate') {
+            if ($company === '' || !validate_tax_no($taxNo)) {
+                flash('error', 'Kurumsal hesap için şirket adı ve geçerli 10 haneli vergi numarası gereklidir.');
+                redirect(url('register'));
+            }
+        } else {
+            if (!validate_tc_no($tcNo)) {
+                flash('error', 'Geçerli bir T.C. kimlik numarası (11 hane) giriniz.');
+                redirect(url('register'));
+            }
         }
+
         $stmt = db()->prepare('SELECT id FROM users WHERE email = ?');
         $stmt->execute([$email]);
         if ($stmt->fetch()) {
@@ -71,14 +113,55 @@ class AuthController extends Controller
             redirect(url('register'));
         }
 
-        $stmt = db()->prepare('INSERT INTO users (first_name, last_name, email, password) VALUES (?, ?, ?, ?)');
-        $stmt->execute([$firstName, $lastName, $email, password_hash($password, PASSWORD_DEFAULT)]);
-        $id = db()->lastInsertId();
+        $stmt = db()->prepare('INSERT INTO users (first_name, last_name, email, password, account_type, tc_no, tax_no, company, email_verified) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 0)');
+        $stmt->execute([$firstName, $lastName, $email, password_hash($password, PASSWORD_DEFAULT), $accountType, $tcNo, $taxNo, $company]);
+        $id = (int)db()->lastInsertId();
 
-        auth()->login(['id' => $id]);
-        $this->log('register', 'Yeni kayıt', (int)$id);
-        flash('success', 'Kayıt başarılı! Hoş geldiniz.');
+        $code = \App\Core\Otp::generate($email, 'register');
+        \App\Core\Otp::sendEmail($email, $code);
+        $_SESSION['pending_verify_email'] = $email;
+
+        $this->log('register', 'Yeni kayıt (email doğrulama bekleniyor)', $id);
+        flash('info', 'Kayıt oluşturuldu. E-posta adresinize gönderilen doğrulama kodunu girin.');
+        redirect(url('verify-email'));
+    }
+
+    public function showVerifyEmail(): void
+    {
+        if (empty($_SESSION['pending_verify_email'])) redirect(url('register'));
+        echo $this->render('auth/verify', ['title' => 'E-posta Doğrulama', 'mode' => 'email', 'email' => $_SESSION['pending_verify_email']], 'auth');
+    }
+
+    public function verifyEmail(): void
+    {
+        $this->validateCsrf();
+        $email = $_SESSION['pending_verify_email'] ?? '';
+        $code = trim($this->input('code', ''));
+        if ($email === '' || !\App\Core\Otp::verify($email, $code, 'register')) {
+            flash('error', 'Doğrulama kodu hatalı veya süresi dolmuş.');
+            redirect(url('verify-email'));
+        }
+        db()->prepare('UPDATE users SET email_verified = 1 WHERE email = ?')->execute([$email]);
+        $stmt = db()->prepare('SELECT * FROM users WHERE email = ?');
+        $stmt->execute([$email]);
+        $user = $stmt->fetch();
+        unset($_SESSION['pending_verify_email']);
+        auth()->login($user);
+        $this->log('register_verified', 'E-posta doğrulandı', (int)$user['id']);
+        flash('success', 'E-posta adresiniz doğrulandı. Hoş geldiniz!');
         redirect(url('client'));
+    }
+
+    public function resendOtp(): void
+    {
+        $this->validateCsrf();
+        $email = $_SESSION['pending_verify_email'] ?? ($_SESSION['pending_login_email'] ?? '');
+        if ($email === '') redirect(url('login'));
+        $type = isset($_SESSION['pending_verify_email']) ? 'register' : 'login';
+        $code = \App\Core\Otp::generate($email, $type);
+        \App\Core\Otp::sendEmail($email, $code);
+        flash('info', 'Yeni doğrulama kodu gönderildi.');
+        redirect(url($type === 'register' ? 'verify-email' : 'verify-login'));
     }
 
     public function logout(): void

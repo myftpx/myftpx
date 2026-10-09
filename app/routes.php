@@ -28,6 +28,9 @@ $router->get('/domains', [PublicController::class, 'domains']);
 $router->get('/domains/search', [PublicController::class, 'domainSearch']);
 $router->post('/domains/register', [PublicController::class, 'domainRegister']);
 $router->get('/network-status', [PublicController::class, 'networkStatus']);
+$router->get('/blog', [PublicController::class, 'blog']);
+$router->get('/blog/{slug}', [PublicController::class, 'blogPost']);
+$router->get('/api-docs', [PublicController::class, 'apiDocs']);
 
 // ---- Auth ----
 $router->get('/login', [AuthController::class, 'showLogin']);
@@ -37,6 +40,11 @@ $router->post('/register', [AuthController::class, 'register']);
 $router->get('/logout', [AuthController::class, 'logout']);
 $router->get('/forgot-password', [AuthController::class, 'showForgot']);
 $router->post('/forgot-password', [AuthController::class, 'forgot']);
+$router->get('/verify-email', [AuthController::class, 'showVerifyEmail']);
+$router->post('/verify-email', [AuthController::class, 'verifyEmail']);
+$router->get('/verify-login', [AuthController::class, 'showVerifyLogin']);
+$router->post('/verify-login', [AuthController::class, 'verifyLogin']);
+$router->post('/verify-resend', [AuthController::class, 'resendOtp']);
 
 // ---- Client area ----
 $router->get('/client', [ClientController::class, 'dashboard']);
@@ -82,8 +90,13 @@ $router->get('/client/quotes/{id}', [ClientController::class, 'quoteDetail']);
 // ---- Admin: auth & dashboard ----
 $router->get('/admin/login', [AdminController::class, 'showLogin']);
 $router->post('/admin/login', [AdminController::class, 'login']);
+$router->get('/admin/verify', [AdminController::class, 'showVerify']);
+$router->post('/admin/verify', [AdminController::class, 'verify']);
 $router->get('/admin/logout', [AdminController::class, 'logout']);
 $router->get('/admin', [AdminController::class, 'dashboard']);
+$router->get('/admin/admins', [AdminController::class, 'admins']);
+$router->post('/admin/admins/add', [AdminController::class, 'adminAdd']);
+$router->post('/admin/admins/{id}/delete', [AdminController::class, 'adminDelete']);
 
 // ---- Admin: clients ----
 $router->get('/admin/clients', [AdminController::class, 'clients']);
@@ -171,6 +184,16 @@ $router->post('/admin/email-templates/{code}', [AdminController::class, 'emailTe
 $router->get('/admin/predefined-replies', [AdminController::class, 'predefinedReplies']);
 $router->post('/admin/predefined-replies/add', [AdminController::class, 'predefinedReplyAdd']);
 $router->post('/admin/predefined-replies/{id}/delete', [AdminController::class, 'predefinedReplyDelete']);
+$router->get('/admin/blog', [AdminController::class, 'blog']);
+$router->post('/admin/blog/category/add', [AdminController::class, 'blogCategoryAdd']);
+$router->post('/admin/blog/category/{id}/delete', [AdminController::class, 'blogCategoryDelete']);
+$router->post('/admin/blog/post/add', [AdminController::class, 'blogPostAdd']);
+$router->post('/admin/blog/post/{id}/delete', [AdminController::class, 'blogPostDelete']);
+$router->get('/admin/activity-log', [AdminController::class, 'activityLog']);
+$router->get('/admin/netlen', [AdminController::class, 'netlen']);
+$router->post('/admin/netlen/save', [AdminController::class, 'netlenSave']);
+$router->post('/admin/netlen/sync', [AdminController::class, 'netlenSync']);
+$router->post('/admin/netlen/register', [AdminController::class, 'netlenRegister']);
 
 // ---- Cron ----
 $router->get('/cron/billing', [App\Controllers\CronController::class, 'billing']);

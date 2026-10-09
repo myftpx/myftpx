@@ -113,4 +113,34 @@ class PublicController extends Controller
         $services = db()->query('SELECT s.*, p.name pname FROM services s LEFT JOIN products p ON p.id = s.product_id WHERE s.status IN ("active","suspended") LIMIT 200')->fetchAll();
         echo $this->render('store/network_status', ['title' => 'Ağ Durumu', 'services' => $services], 'store');
     }
+
+    // ---- Blog ----
+    public function blog(): void
+    {
+        $categories = db()->query('SELECT c.*, (SELECT COUNT(*) FROM blog_posts p WHERE p.category_id = c.id AND p.status = 1) cnt FROM blog_categories c ORDER BY c.sort_order, c.id')->fetchAll();
+        $cat = $_GET['category'] ?? '';
+        if ($cat !== '') {
+            $stmt = db()->prepare('SELECT p.*, c.name cat FROM blog_posts p LEFT JOIN blog_categories c ON c.id = p.category_id WHERE p.status = 1 AND c.slug = ? ORDER BY p.published_at DESC');
+            $stmt->execute([$cat]);
+        } else {
+            $stmt = db()->query('SELECT p.*, c.name cat FROM blog_posts p LEFT JOIN blog_categories c ON c.id = p.category_id WHERE p.status = 1 ORDER BY p.published_at DESC');
+        }
+        $posts = $stmt->fetchAll();
+        echo $this->render('store/blog', ['title' => 'Blog', 'posts' => $posts, 'categories' => $categories, 'cat' => $cat], 'store');
+    }
+
+    public function blogPost(string $slug): void
+    {
+        $stmt = db()->prepare('SELECT p.*, c.name cat FROM blog_posts p LEFT JOIN blog_categories c ON c.id = p.category_id WHERE p.slug = ? AND p.status = 1');
+        $stmt->execute([$slug]);
+        $post = $stmt->fetch();
+        if (!$post) { http_response_code(404); echo $this->render('errors/404', ['title' => 'Bulunamadı'], 'store'); return; }
+        db()->prepare('UPDATE blog_posts SET views = views + 1 WHERE id = ?')->execute([$post['id']]);
+        echo $this->render('store/blog_post', ['title' => $post['title'], 'post' => $post], 'store');
+    }
+
+    public function apiDocs(): void
+    {
+        echo $this->render('store/api_docs', ['title' => 'API Dokümantasyonu'], 'store');
+    }
 }

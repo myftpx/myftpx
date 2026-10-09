@@ -26,10 +26,75 @@ class AdminController extends Controller
             flash('error', 'E-posta veya şifre hatalı.');
             redirect(url('admin/login'));
         }
+        // Admin OTP (2FA)
+        $code = \App\Core\Otp::generate($email, 'admin');
+        \App\Core\Otp::sendEmail($email, $code);
+        $_SESSION['pending_admin_email'] = $email;
+        flash('info', 'Yönetici girişi için doğrulama kodu e-posta adresinize gönderildi.');
+        redirect(url('admin/verify'));
+    }
+
+    public function showVerify(): void
+    {
+        if (empty($_SESSION['pending_admin_email'])) redirect(url('admin/login'));
+        echo $this->render('admin/verify', ['title' => 'Yönetici Doğrulama', 'email' => $_SESSION['pending_admin_email']], 'admin-auth');
+    }
+
+    public function verify(): void
+    {
+        $this->validateCsrf();
+        $email = $_SESSION['pending_admin_email'] ?? '';
+        $code = trim($this->input('code', ''));
+        if ($email === '' || !\App\Core\Otp::verify($email, $code, 'admin')) {
+            flash('error', 'Doğrulama kodu hatalı veya süresi dolmuş.');
+            redirect(url('admin/verify'));
+        }
+        $stmt = db()->prepare('SELECT * FROM admins WHERE email = ?');
+        $stmt->execute([$email]);
+        $admin = $stmt->fetch();
+        unset($_SESSION['pending_admin_email']);
+        if (!$admin) redirect(url('admin/login'));
+
         auth()->loginAdmin($admin);
         db()->prepare('UPDATE admins SET last_login = ? WHERE id = ?')->execute([now(), $admin['id']]);
-        $this->log('admin_login', 'Yönetici girişi', null, (int)$admin['id']);
+        $this->log('admin_login', 'Yönetici girişi (OTP doğrulandı)', null, (int)$admin['id']);
         redirect(url('admin'));
+    }
+
+    public function admins(): void
+    {
+        $this->guard();
+        $admins = db()->query('SELECT id, name, email, role, last_login, created_at FROM admins ORDER BY id')->fetchAll();
+        echo $this->render('admin/admins', ['title' => 'Yöneticiler', 'admins' => $admins], 'admin');
+    }
+
+    public function adminAdd(): void
+    {
+        $this->guard(); $this->validateCsrf();
+        $name = trim($this->input('name', ''));
+        $email = trim($this->input('email', ''));
+        $password = (string)$this->input('password', '');
+        $role = $this->input('role', 'admin');
+        if ($name === '' || !filter_var($email, FILTER_VALIDATE_EMAIL) || strlen($password) < 6) {
+            flash('error', 'Geçerli bilgiler girin (şifre en az 6 karakter).');
+            redirect(url('admin/admins'));
+        }
+        db()->prepare('INSERT INTO admins (name, email, password, role) VALUES (?, ?, ?, ?)')
+            ->execute([$name, $email, password_hash($password, PASSWORD_DEFAULT), $role]);
+        flash('success', 'Yönetici eklendi.');
+        redirect(url('admin/admins'));
+    }
+
+    public function adminDelete(string $id): void
+    {
+        $this->guard(); $this->validateCsrf();
+        if ((int)$id === (int)(auth()->admin()['id'] ?? 0)) {
+            flash('error', 'Kendi hesabınızı silemezsiniz.');
+            redirect(url('admin/admins'));
+        }
+        db()->prepare('DELETE FROM admins WHERE id = ?')->execute([$id]);
+        flash('success', 'Yönetici silindi.');
+        redirect(url('admin/admins'));
     }
 
     public function logout(): void
@@ -526,7 +591,8 @@ class AdminController extends Controller
     public function settingsSave(): void
     {
         $this->guard(); $this->validateCsrf();
-        $keys = ['site_name', 'theme', 'currency', 'admin_email', 'tax_rate', 'invoice_prefix', 'default_language', 'api_enabled', 'allow_registration', 'maintenance_mode', 'support_email', 'terms_url', 'privacy_url'];
+        $keys = ['site_name', 'theme', 'currency', 'admin_email', 'tax_rate', 'invoice_prefix', 'default_language', 'api_enabled', 'allow_registration', 'maintenance_mode', 'support_email', 'terms_url', 'privacy_url',
+                 'smtp_host', 'smtp_port', 'smtp_user', 'smtp_pass', 'smtp_from_email', 'smtp_from_name', 'sms_gateway', 'sms_api_key', 'sms_api_secret', 'sms_sender'];
         foreach ($keys as $k) {
             set_setting($k, $this->input($k, ''));
         }
@@ -534,6 +600,7 @@ class AdminController extends Controller
         set_setting('api_enabled', isset($_POST['api_enabled']) ? '1' : '0');
         set_setting('allow_registration', isset($_POST['allow_registration']) ? '1' : '0');
         set_setting('maintenance_mode', isset($_POST['maintenance_mode']) ? '1' : '0');
+        set_setting('sms_enabled', isset($_POST['sms_enabled']) ? '1' : '0');
         flash('success', 'Ayarlar kaydedildi.');
         redirect(url('admin/settings'));
     }
@@ -807,6 +874,141 @@ class AdminController extends Controller
         db()->prepare('DELETE FROM predefined_replies WHERE id = ?')->execute([$id]);
         flash('success', 'Hazır yanıt silindi.');
         redirect(url('admin/predefined-replies'));
+    }
+
+    public function blog(): void
+    {
+        $this->guard();
+        $categories = db()->query('SELECT * FROM blog_categories ORDER BY sort_order, id')->fetchAll();
+        $posts = db()->query('SELECT p.*, c.name cat FROM blog_posts p LEFT JOIN blog_categories c ON c.id = p.category_id ORDER BY p.id DESC')->fetchAll();
+        echo $this->render('admin/blog', ['title' => 'Blog Yönetimi', 'categories' => $categories, 'posts' => $posts], 'admin');
+    }
+
+    public function blogCategoryAdd(): void
+    {
+        $this->guard(); $this->validateCsrf();
+        db()->prepare('INSERT INTO blog_categories (name, slug) VALUES (?, ?)')->execute([trim($this->input('name', '')), slug($this->input('name', ''))]);
+        flash('success', 'Kategori eklendi.');
+        redirect(url('admin/blog'));
+    }
+
+    public function blogCategoryDelete(string $id): void
+    {
+        $this->guard(); $this->validateCsrf();
+        db()->prepare('DELETE FROM blog_categories WHERE id = ?')->execute([$id]);
+        flash('success', 'Kategori silindi.');
+        redirect(url('admin/blog'));
+    }
+
+    public function blogPostAdd(): void
+    {
+        $this->guard(); $this->validateCsrf();
+        $title = trim($this->input('title', ''));
+        db()->prepare('INSERT INTO blog_posts (title, slug, category_id, excerpt, content, image, status, seo_title, seo_description, published_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)')
+            ->execute([$title, slug($title . '-' . uniqid()), (int)$this->input('category_id', 0), $this->input('excerpt', ''), $this->input('content', ''), $this->input('image', ''), (int)$this->input('status', 1), $this->input('seo_title', ''), $this->input('seo_description', ''), now()]);
+        flash('success', 'Blog yazısı eklendi.');
+        redirect(url('admin/blog'));
+    }
+
+    public function blogPostDelete(string $id): void
+    {
+        $this->guard(); $this->validateCsrf();
+        db()->prepare('DELETE FROM blog_posts WHERE id = ?')->execute([$id]);
+        flash('success', 'Blog yazısı silindi.');
+        redirect(url('admin/blog'));
+    }
+
+    public function activityLog(): void
+    {
+        $this->guard();
+        $logs = db()->query('SELECT l.*, u.first_name, u.last_name, a.name admin_name FROM activity_log l LEFT JOIN users u ON u.id = l.user_id LEFT JOIN admins a ON a.id = l.admin_id ORDER BY l.id DESC LIMIT 500')->fetchAll();
+        echo $this->render('admin/activity_log', ['title' => 'Kullanıcı Hareket Logu', 'logs' => $logs], 'admin');
+    }
+    public function netlen(): void
+    {
+        $this->guard();
+        $localDomains = db()->query("SELECT * FROM domains WHERE registrar = 'netlen' ORDER BY id DESC")->fetchAll();
+        $balance = null;
+        $domains = null;
+        $error = null;
+        $api = netlen();
+        if ($api && $api->isEnabled()) {
+            $b = $api->getBalance();
+            if ($b['success']) $balance = $b['data'];
+            $d = $api->listDomains();
+            if ($d['success']) $domains = $d['data'];
+            else $error = $d['message'];
+        }
+        echo $this->render('admin/netlen', ['title' => 'Netlen Bayilik (Domain)', 'localDomains' => $localDomains, 'balance' => $balance, 'domains' => $domains, 'error' => $error], 'admin');
+    }
+
+    public function netlenSave(): void
+    {
+        $this->guard(); $this->validateCsrf();
+        set_setting('netlen_enabled', isset($_POST['netlen_enabled']) ? '1' : '0');
+        set_setting('netlen_api_key', trim($this->input('netlen_api_key', '')));
+        set_setting('netlen_api_url', trim($this->input('netlen_api_url', 'https://api.netlen.com.tr/v2')));
+        set_setting('netlen_ns1', trim($this->input('netlen_ns1', 'ns1.netlen.com.tr')));
+        set_setting('netlen_ns2', trim($this->input('netlen_ns2', 'ns2.netlen.com.tr')));
+        flash('success', 'Netlen ayarları kaydedildi.');
+        redirect(url('admin/netlen'));
+    }
+
+    public function netlenSync(): void
+    {
+        $this->guard(); $this->validateCsrf();
+        $api = netlen();
+        if (!$api || !$api->isEnabled()) {
+            flash('error', 'Netlen modülü etkin değil veya API anahtarı eksik.');
+            redirect(url('admin/netlen'));
+        }
+        $res = $api->listDomains();
+        if (!$res['success']) {
+            flash('error', 'Netlen API hatası: ' . $res['message']);
+            redirect(url('admin/netlen'));
+        }
+        $count = 0;
+        foreach ((array)$res['data'] as $d) {
+            $name = $d['domain'] ?? ($d['name'] ?? '');
+            if ($name === '') continue;
+            $stmt = db()->prepare('SELECT id FROM domains WHERE domain = ?');
+            $stmt->execute([$name]);
+            if (!$stmt->fetch()) {
+                db()->prepare('INSERT INTO domains (user_id, domain, registrar, tld, status, expiry_date, nameservers, dns) VALUES (?, ?, ?, ?, ?, ?, ?, ?)')
+                    ->execute([0, $name, 'netlen', $d['tld'] ?? '', $d['status'] ?? 'active', $d['expires_at'] ?? ($d['expiry_date'] ?? null), json_encode([setting('netlen_ns1'), setting('netlen_ns2')]), json_encode([])]);
+                $count++;
+            }
+        }
+        flash('success', "{$count} alan adı senkronize edildi.");
+        redirect(url('admin/netlen'));
+    }
+
+    public function netlenRegister(): void
+    {
+        $this->guard(); $this->validateCsrf();
+        $api = netlen();
+        $domain = trim($this->input('domain', ''));
+        $years = (int)$this->input('years', 1);
+        $contact = [
+            'name' => trim($this->input('contact_name', '')),
+            'email' => trim($this->input('contact_email', '')),
+            'phone' => trim($this->input('contact_phone', '')),
+            'address' => trim($this->input('contact_address', '')),
+            'city' => trim($this->input('contact_city', '')),
+            'postal_code' => trim($this->input('contact_postal', '')),
+            'country' => 'TR',
+        ];
+        if (!$api || !$api->isEnabled()) {
+            flash('error', 'Netlen modülü etkin değil.');
+            redirect(url('admin/netlen'));
+        }
+        $res = $api->registerDomain($domain, $years, $contact, [setting('netlen_ns1'), setting('netlen_ns2')]);
+        if ($res['success']) {
+            flash('success', 'Alan adı Netlen üzerinden kaydedildi: ' . $domain);
+        } else {
+            flash('error', 'Kayıt başarısız: ' . $res['message']);
+        }
+        redirect(url('admin/netlen'));
     }
 }
 

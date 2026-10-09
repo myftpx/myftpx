@@ -66,6 +66,40 @@
     </div>
 
     <div class="card mb-3" style="max-width:860px">
+        <div class="card-header"><h3>E-posta (SMTP) & SMS/WhatsApp</h3></div>
+        <div class="card-body">
+            <div class="form-row">
+                <div class="form-group"><label>SMTP Host</label><input class="form-control" name="smtp_host" value="<?= e(setting('smtp_host')) ?>"></div>
+                <div class="form-group"><label>SMTP Port</label><input class="form-control" name="smtp_port" value="<?= e(setting('smtp_port', '587')) ?>"></div>
+            </div>
+            <div class="form-row">
+                <div class="form-group"><label>SMTP Kullanıcı</label><input class="form-control" name="smtp_user" value="<?= e(setting('smtp_user')) ?>"></div>
+                <div class="form-group"><label>SMTP Şifre</label><input class="form-control" type="password" name="smtp_pass" value="<?= e(setting('smtp_pass')) ?>"></div>
+            </div>
+            <div class="form-row">
+                <div class="form-group"><label>Gönderen E-posta</label><input class="form-control" name="smtp_from_email" value="<?= e(setting('smtp_from_email')) ?>"></div>
+                <div class="form-group"><label>Gönderen Adı</label><input class="form-control" name="smtp_from_name" value="<?= e(setting('smtp_from_name')) ?>"></div>
+            </div>
+            <div class="divider"></div>
+            <div class="form-row">
+                <div class="form-group"><label>SMS/WhatsApp Gateway</label>
+                    <select class="form-control" name="sms_gateway">
+                        <?php foreach (['whatsapp' => 'WhatsApp (CallMeBot)', 'netgsm' => 'Netgsm', 'twilio' => 'Twilio'] as $v => $l): ?>
+                            <option value="<?= $v ?>" <?= setting('sms_gateway') === $v ? 'selected' : '' ?>><?= $l ?></option>
+                        <?php endforeach; ?>
+                    </select>
+                </div>
+                <div class="form-group"><label>API Key</label><input class="form-control" name="sms_api_key" value="<?= e(setting('sms_api_key')) ?>"></div>
+            </div>
+            <div class="form-row">
+                <div class="form-group"><label>API Secret</label><input class="form-control" type="password" name="sms_api_secret" value="<?= e(setting('sms_api_secret')) ?>"></div>
+                <div class="form-group"><label>Gönderen (Sender)</label><input class="form-control" name="sms_sender" value="<?= e(setting('sms_sender')) ?>"></div>
+            </div>
+            <label class="form-check mb-2"><input type="checkbox" name="sms_enabled" value="1" <?= setting('sms_enabled') ? 'checked' : '' ?>> OTP SMS/WhatsApp gönderimini etkinleştir</label>
+        </div>
+    </div>
+
+    <div class="card mb-3" style="max-width:860px">
         <div class="card-header"><h3>Sistem</h3></div>
         <div class="card-body">
             <label class="form-check mb-2"><input type="checkbox" name="api_enabled" value="1" <?= setting('api_enabled', '1') ? 'checked' : '' ?>> API erişimini etkinleştir</label>

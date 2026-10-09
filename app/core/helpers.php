@@ -203,3 +203,28 @@ if (!function_exists('payment_log')) {
         }
     }
 }
+
+if (!function_exists('validate_tc_no')) {
+    function validate_tc_no(string $tc): bool {
+        if (!preg_match('/^[1-9][0-9]{10}$/', $tc)) return false;
+        $d = str_split($tc);
+        $odd = $d[0] + $d[2] + $d[4] + $d[6] + $d[8];
+        $even = $d[1] + $d[3] + $d[5] + $d[7];
+        if (($odd * 7 - $even) % 10 !== (int)$d[9]) return false;
+        if (array_sum(array_slice($d, 0, 10)) % 10 !== (int)$d[10]) return false;
+        return true;
+    }
+}
+
+if (!function_exists('validate_tax_no')) {
+    function validate_tax_no(string $tax): bool {
+        return preg_match('/^[0-9]{10}$/', $tax) === 1;
+    }
+}
+
+if (!function_exists('netlen')) {
+    function netlen(): ?\App\Core\NetlenApi {
+        $api = new \App\Core\NetlenApi();
+        return $api->isConfigured() ? $api : null;
+    }
+}

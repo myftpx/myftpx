@@ -1,0 +1,188 @@
+<?php
+/**
+ * RCVXTR — Global helper functions
+ */
+
+if (!function_exists('e')) {
+    function e($value): string {
+        return htmlspecialchars((string)($value ?? ''), ENT_QUOTES, 'UTF-8');
+    }
+}
+
+if (!function_exists('config')) {
+    function config(?string $key = null, $default = null) {
+        static $cfg = null;
+        if ($cfg === null) {
+            $path = dirname(__DIR__, 2) . '/config.php';
+            $cfg = is_file($path) ? (include $path) : [];
+            if (!is_array($cfg)) $cfg = [];
+        }
+        if ($key === null) return $cfg;
+        return $cfg[$key] ?? $default;
+    }
+}
+
+if (!function_exists('db')) {
+    function db(): \PDO {
+        return \App\Core\Database::instance();
+    }
+}
+
+if (!function_exists('setting')) {
+    function setting(string $key, $default = null) {
+        static $cache = [];
+        if (array_key_exists($key, $cache)) return $cache[$key];
+        try {
+            $stmt = db()->prepare('SELECT value FROM settings WHERE name = ?');
+            $stmt->execute([$key]);
+            $row = $stmt->fetch();
+            $value = $row ? $row['value'] : $default;
+        } catch (\Throwable $t) {
+            $value = $default;
+        }
+        $cache[$key] = $value;
+        return $value;
+    }
+}
+
+if (!function_exists('set_setting')) {
+    function set_setting(string $key, $value): void {
+        $stmt = db()->prepare('INSERT INTO settings (name, value) VALUES (?, ?) ON CONFLICT(name) DO UPDATE SET value = excluded.value');
+        $stmt->execute([$key, (string)$value]);
+    }
+}
+
+if (!function_exists('redirect')) {
+    function redirect(string $url): never {
+        header('Location: ' . $url);
+        exit;
+    }
+}
+
+if (!function_exists('url')) {
+    function url(string $path = ''): string {
+        $base = rtrim(config('base_url', ''), '/');
+        return $base . '/' . ltrim($path, '/');
+    }
+}
+
+if (!function_exists('asset')) {
+    function asset(string $path): string {
+        return url('assets/' . ltrim($path, '/'));
+    }
+}
+
+if (!function_exists('current_theme')) {
+    function current_theme(): string {
+        $theme = setting('theme', 'rcvxtrwhite');
+        return in_array($theme, ['rcvxtrwhite', 'rcvxtrdark'], true) ? $theme : 'rcvxtrwhite';
+    }
+}
+
+if (!function_exists('flash')) {
+    function flash(?string $type = null, ?string $message = null): ?array {
+        if ($type !== null) {
+            $_SESSION['_flash'] = ['type' => $type, 'message' => $message];
+            return null;
+        }
+        $f = $_SESSION['_flash'] ?? null;
+        unset($_SESSION['_flash']);
+        return $f;
+    }
+}
+
+if (!function_exists('csrf_token')) {
+    function csrf_token(): string {
+        return \App\Core\Csrf::token();
+    }
+}
+
+if (!function_exists('csrf_field')) {
+    function csrf_field(): string {
+        return '<input type="hidden" name="_token" value="' . e(csrf_token()) . '">';
+    }
+}
+
+if (!function_exists('auth')) {
+    function auth(): ?\App\Core\Auth {
+        return \App\Core\Auth::instance();
+    }
+}
+
+if (!function_exists('money')) {
+    function money($amount, ?string $currency = null): string {
+        $currency = $currency ?: (setting('currency', 'TRY'));
+        $symbols = [
+            'TRY' => '₺', 'USD' => '$', 'EUR' => '€', 'GBP' => '£',
+        ];
+        $symbol = $symbols[$currency] ?? ($currency . ' ');
+        $formatted = number_format((float)$amount, 2, ',', '.');
+        return $symbol . $formatted;
+    }
+}
+
+if (!function_exists('slug')) {
+    function slug(string $text): string {
+        $text = mb_strtolower(trim($text));
+        $map = ['ı' => 'i', 'ğ' => 'g', 'ü' => 'u', 'ş' => 's', 'ö' => 'o', 'ç' => 'c'];
+        $text = strtr($text, $map);
+        $text = preg_replace('/[^a-z0-9]+/', '-', $text);
+        return trim($text, '-');
+    }
+}
+
+if (!function_exists('random_key')) {
+    function random_key(int $length = 40): string {
+        return bin2hex(random_bytes($length));
+    }
+}
+
+if (!function_exists('time_ago')) {
+    function time_ago($datetime): string {
+        $time = is_numeric($datetime) ? $datetime : strtotime($datetime);
+        $diff = time() - $time;
+        if ($diff < 60) return 'az önce';
+        if ($diff < 3600) return floor($diff / 60) . ' dk önce';
+        if ($diff < 86400) return floor($diff / 3600) . ' saat önce';
+        if ($diff < 2592000) return floor($diff / 86400) . ' gün önce';
+        if ($diff < 31536000) return floor($diff / 2592000) . ' ay önce';
+        return floor($diff / 31536000) . ' yıl önce';
+    }
+}
+
+if (!function_exists('now')) {
+    function now(): string {
+        return date('Y-m-d H:i:s');
+    }
+}
+
+if (!function_exists('mask_email')) {
+    function mask_email(string $email): string {
+        [$user, $domain] = explode('@', $email, 2) + ['', ''];
+        $len = strlen($user);
+        $visible = min(2, $len);
+        return substr($user, 0, $visible) . str_repeat('*', max(1, $len - $visible)) . '@' . $domain;
+    }
+}
+
+if (!function_exists('active_nav')) {
+    function active_nav(string $path, bool $exact = false): string {
+        $uri = $_SERVER['REQUEST_URI'] ?? '';
+        $uri = explode('?', $uri)[0];
+        if ($exact) return $uri === $path ? 'active' : '';
+        return str_starts_with($uri, $path) ? 'active' : '';
+    }
+}
+
+if (!function_exists('view')) {
+    function view(string $template, array $data = []): string {
+        return \App\Core\View::render($template, $data);
+    }
+}
+
+if (!function_exists('gravatar')) {
+    function gravatar(string $email, int $size = 80): string {
+        $hash = md5(strtolower(trim($email)));
+        return 'https://www.gravatar.com/avatar/' . $hash . '?s=' . $size . '&d=mp';
+    }
+}

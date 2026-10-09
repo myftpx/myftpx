@@ -1,0 +1,8 @@
+config.php
+storage/*.sqlite
+storage/*.sqlite-*
+storage/logs/*
+uploads/*
+!uploads/.gitkeep
+.DS_Store
+*.log

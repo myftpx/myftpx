@@ -1,0 +1,71 @@
+<div class="page-head"><h1>Genel Ayarlar</h1></div>
+
+<form method="post" action="<?= url('admin/settings') ?>">
+    <?= csrf_field() ?>
+    <div class="card mb-3" style="max-width:860px">
+        <div class="card-header"><h3>Genel</h3></div>
+        <div class="card-body">
+            <div class="form-row">
+                <div class="form-group"><label>Site Adı</label><input class="form-control" name="site_name" value="<?= e(setting('site_name')) ?>"></div>
+                <div class="form-group"><label>Yönetici E-posta</label><input class="form-control" name="admin_email" value="<?= e(setting('admin_email')) ?>"></div>
+            </div>
+            <div class="form-row">
+                <div class="form-group"><label>Destek E-posta</label><input class="form-control" name="support_email" value="<?= e(setting('support_email')) ?>"></div>
+                <div class="form-group"><label>Varsayılan Dil</label>
+                    <select class="form-control" name="default_language">
+                        <option value="tr" <?= setting('default_language') === 'tr' ? 'selected' : '' ?>>Türkçe</option>
+                        <option value="en" <?= setting('default_language') === 'en' ? 'selected' : '' ?>>English</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card mb-3" style="max-width:860px">
+        <div class="card-header"><h3>Tema</h3></div>
+        <div class="card-body">
+            <p class="text-muted mb-3">Site genelinde kullanılacak kurumsal temayı seçin. Değişiklik anında tüm arayüzlere yansır.</p>
+            <div class="form-row">
+                <?php foreach ($themes as $code => $label): ?>
+                    <label class="card" style="cursor:pointer;padding:16px;border:2px solid <?= setting('theme') === $code ? 'var(--primary)' : 'var(--border)' ?>">
+                        <input type="radio" name="theme" value="<?= $code ?>" <?= setting('theme') === $code ? 'checked' : '' ?> style="margin-right:8px">
+                        <strong><?= e($label) ?></strong>
+                        <div class="small text-muted mt-1"><?= $code === 'rcvxtrwhite' ? 'Açık (beyaz) kurumsal tema' : 'Koyu (dark) kurumsal tema' ?></div>
+                    </label>
+                <?php endforeach; ?>
+            </div>
+        </div>
+    </div>
+
+    <div class="card mb-3" style="max-width:860px">
+        <div class="card-header"><h3>Faturalama</h3></div>
+        <div class="card-body">
+            <div class="form-row-3">
+                <div class="form-group"><label>Para Birimi</label>
+                    <select class="form-control" name="currency">
+                        <?php foreach (['TRY', 'USD', 'EUR', 'GBP'] as $c): ?>
+                            <option value="<?= $c ?>" <?= setting('currency') === $c ? 'selected' : '' ?>><?= $c ?></option>
+                        <?php endforeach; ?>
+                    </select>
+                </div>
+                <div class="form-group"><label>KDV Oranı (%)</label><input class="form-control" type="number" step="0.01" name="tax_rate" value="<?= e(setting('tax_rate', '20')) ?>"></div>
+                <div class="form-group"><label>Fatura Öneki</label><input class="form-control" name="invoice_prefix" value="<?= e(setting('invoice_prefix')) ?>"></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card mb-3" style="max-width:860px">
+        <div class="card-header"><h3>Sistem</h3></div>
+        <div class="card-body">
+            <label class="form-check mb-2"><input type="checkbox" name="api_enabled" value="1" <?= setting('api_enabled', '1') ? 'checked' : '' ?>> API erişimini etkinleştir</label>
+            <label class="form-check mb-2"><input type="checkbox" name="allow_registration" value="1" <?= setting('allow_registration', '1') ? 'checked' : '' ?>> Yeni müşteri kayıtlarına izin ver</label>
+            <label class="form-check mb-2"><input type="checkbox" name="maintenance_mode" value="1" <?= setting('maintenance_mode', '0') ? 'checked' : '' ?>> Bakım modu</label>
+            <div class="form-row mt-2">
+                <div class="form-group"><label>Kullanım Şartları URL</label><input class="form-control" name="terms_url" value="<?= e(setting('terms_url')) ?>"></div>
+                <div class="form-group"><label>Gizlilik URL</label><input class="form-control" name="privacy_url" value="<?= e(setting('privacy_url')) ?>"></div>
+            </div>
+        </div>
+    </div>
+
+    <button class="btn btn-primary btn-lg" type="submit">Ayarları Kaydet</button>
+</form>

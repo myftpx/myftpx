@@ -12,13 +12,16 @@ use App\Core\Router;
 $uri = parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH) ?: '/';
 $uri = rtrim($uri, '/') ?: '/';
 
-if (str_starts_with($uri, '/install') || str_starts_with($uri, '/assets') || str_starts_with($uri, '/favicon')) {
-    // Let install / static assets pass through to their own files
-    if (str_starts_with($uri, '/install')) {
-        require __DIR__ . '/install/index.php';
-        exit;
-    }
-    return false; // serve static via built-in server / web server
+// Serve the installer
+if (str_starts_with($uri, '/install')) {
+    require __DIR__ . '/install/index.php';
+    exit;
+}
+
+// Serve real static files directly (assets, images, downloads, zip, etc.)
+$staticFile = __DIR__ . $uri;
+if ($uri !== '/' && is_file($staticFile) && !str_ends_with($uri, '.php')) {
+    return false; // hand off to the built-in / web server
 }
 
 if (!Database::isInstalled()) {

@@ -591,6 +591,7 @@ class AdminController extends Controller
     public function settingsSave(): void
     {
         $this->guard(); $this->validateCsrf();
+        try {
         $keys = ['site_name', 'theme', 'currency', 'admin_email', 'tax_rate', 'invoice_prefix', 'default_language', 'api_enabled', 'allow_registration', 'maintenance_mode', 'support_email', 'terms_url', 'privacy_url',
                  'smtp_host', 'smtp_port', 'smtp_user', 'smtp_pass', 'smtp_from_email', 'smtp_from_name', 'smtp_encryption', 'sms_gateway', 'sms_api_key', 'sms_api_secret', 'sms_sender', 'mail_method'];
         foreach ($keys as $k) {
@@ -602,6 +603,9 @@ class AdminController extends Controller
         set_setting('maintenance_mode', isset($_POST['maintenance_mode']) ? '1' : '0');
         set_setting('sms_enabled', isset($_POST['sms_enabled']) ? '1' : '0');
         flash('success', 'Ayarlar kaydedildi.');
+        } catch (\Throwable $t) {
+            flash('error', 'Kaydetme hatası: ' . $t->getMessage());
+        }
         redirect(url('admin/settings'));
     }
 

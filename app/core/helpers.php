@@ -289,9 +289,7 @@ if (!function_exists('validate_promo')) {
 if (!function_exists('mail_actually_configured')) {
     /** True only when SMTP is enabled, host is set and method is smtp (real email delivery). */
     function mail_actually_configured(): bool {
-        return setting('mail_method', 'php') === 'smtp'
-            && (int)setting('smtp_enabled', 0) === 1
-            && setting('smtp_host', '') !== '';
+        return setting('mail_method', 'php') === 'smtp' && setting('smtp_host', '') !== '';
     }
 }
 

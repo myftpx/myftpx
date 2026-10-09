@@ -85,7 +85,7 @@
                 </div>
             </div>
             <div class="form-row">
-                <div class="form-group"><label>SMTP Host</label><input class="form-control" name="smtp_host" placeholder="mail.alandomain.com"></div>
+                <div class="form-group"><label>SMTP Host</label><input class="form-control" name="smtp_host" value="<?= e(setting('smtp_host')) ?>" placeholder="mail.alandomain.com"></div>
                 <div class="form-group"><label>SMTP Port</label>
                     <select class="form-control" name="smtp_port">
                         <option value="465" <?= setting('smtp_port') === '465' ? 'selected' : '' ?>>465 (SSL — DirectAdmin önerilen)</option>
@@ -101,13 +101,13 @@
                         <option value="tls" <?= setting('smtp_encryption') === 'tls' ? 'selected' : '' ?>>TLS (STARTTLS)</option>
                     </select>
                 </div>
-                <div class="form-group"><label>SMTP Kullanıcı</label><input class="form-control" name="smtp_user" placeholder="bilgi@alandomain.com"></div>
+                <div class="form-group"><label>SMTP Kullanıcı</label><input class="form-control" name="smtp_user" value="<?= e(setting('smtp_user')) ?>" placeholder="bilgi@alandomain.com"></div>
             </div>
             <div class="form-row">
                 <div class="form-group"><label>SMTP Şifre</label><input class="form-control" type="password" name="smtp_pass" value="<?= e(setting('smtp_pass')) ?>"></div>
-                <div class="form-group"><label>Gönderen E-posta</label><input class="form-control" name="smtp_from_email" placeholder="bilgi@alandomain.com"></div>
+                <div class="form-group"><label>Gönderen E-posta</label><input class="form-control" name="smtp_from_email" value="<?= e(setting('smtp_from_email')) ?>" placeholder="bilgi@alandomain.com"></div>
             </div>
-            <div class="form-group"><label>Gönderen Adı</label><input class="form-control" name="smtp_from_name" placeholder="<?= e(setting('site_name', 'RCVXTR')) ?>"></div>
+            <div class="form-group"><label>Gönderen Adı</label><input class="form-control" name="smtp_from_name" value="<?= e(setting('smtp_from_name')) ?>" placeholder="<?= e(setting('site_name', 'RCVXTR')) ?>"></div>
             <div class="alert alert-info small">DirectAdmin/Roundcube için: Host = <code class="mono">mail.alandomain.com</code>, Port = <strong>465</strong> (SSL), Kullanıcı = <strong>tam e-posta adresi</strong> (örn. bilgi@alandomain.com), Şifre = o e-posta hesabının şifresi.</div>
             <div class="divider"></div>
             <div class="form-row">

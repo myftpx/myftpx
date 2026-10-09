@@ -14,10 +14,15 @@ class StoreController extends Controller
             $categories[$c][] = $p;
         }
 
+        $announcements = db()->query('SELECT * FROM announcements WHERE status = 1 ORDER BY published_at DESC LIMIT 3')->fetchAll();
+        $tlds = db()->query('SELECT * FROM tld_pricing WHERE status = 1 ORDER BY tld LIMIT 12')->fetchAll();
+
         echo $this->render('store/home', [
             'title' => setting('site_name', 'RCVXTR') . ' — Hosting & Domain',
             'products' => $products,
             'categories' => $categories,
+            'announcements' => $announcements,
+            'tlds' => $tlds,
         ], 'store');
     }
 

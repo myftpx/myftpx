@@ -28,6 +28,8 @@
             <div class="section-label">Geliştirici</div>
             <a href="<?= url('client/api') ?>" class="<?= active_nav('/client/api') ?>"><span class="ico">⌘</span> API Erişimi</a>
             <a href="<?= url('client/profile') ?>" class="<?= active_nav('/client/profile') ?>"><span class="ico">⚙</span> Profilim</a>
+            <a href="<?= url('client/contacts') ?>" class="<?= active_nav('/client/contacts') ?>"><span class="ico">👥</span> Alt Hesaplar</a>
+            <a href="<?= url('client/quotes') ?>" class="<?= active_nav('/client/quotes') ?>"><span class="ico">📄</span> Tekliflerim</a>
         </nav>
         <div class="side-user">
             <div class="name"><?= e($u['first_name'] . ' ' . $u['last_name']) ?></div>

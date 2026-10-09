@@ -8,6 +8,7 @@ use App\Controllers\AuthController;
 use App\Controllers\ClientController;
 use App\Controllers\AdminController;
 use App\Controllers\ApiController;
+use App\Controllers\PublicController;
 
 // ---- Public / Store ----
 $router->get('/', [StoreController::class, 'home']);
@@ -16,6 +17,17 @@ $router->get('/store/product/{slug}', [StoreController::class, 'product']);
 $router->get('/store/category/{category}', [StoreController::class, 'category']);
 $router->post('/store/order', [StoreController::class, 'order']);
 $router->post('/store/contact', [StoreController::class, 'contact']);
+
+// ---- Public content ----
+$router->get('/announcements', [PublicController::class, 'announcements']);
+$router->get('/announcements/{id}', [PublicController::class, 'announcement']);
+$router->get('/knowledgebase', [PublicController::class, 'knowledgebase']);
+$router->get('/knowledgebase/category/{id}', [PublicController::class, 'kbCategory']);
+$router->get('/knowledgebase/{id}', [PublicController::class, 'kbArticle']);
+$router->get('/domains', [PublicController::class, 'domains']);
+$router->get('/domains/search', [PublicController::class, 'domainSearch']);
+$router->post('/domains/register', [PublicController::class, 'domainRegister']);
+$router->get('/network-status', [PublicController::class, 'networkStatus']);
 
 // ---- Auth ----
 $router->get('/login', [AuthController::class, 'showLogin']);
@@ -60,6 +72,12 @@ $router->post('/client/cards/{id}/default', [ClientController::class, 'cardDefau
 $router->get('/client/payments', [ClientController::class, 'paymentLogs']);
 $router->post('/client/invoices/{id}/bank-transfer', [ClientController::class, 'bankTransfer']);
 $router->post('/client/services/{id}/autorenew', [ClientController::class, 'serviceAutorenew']);
+$router->get('/client/contacts', [ClientController::class, 'contacts']);
+$router->post('/client/contacts/add', [ClientController::class, 'contactAdd']);
+$router->post('/client/contacts/{id}/delete', [ClientController::class, 'contactDelete']);
+$router->post('/client/tickets/{id}/rate', [ClientController::class, 'ticketRate']);
+$router->get('/client/quotes', [ClientController::class, 'quotes']);
+$router->get('/client/quotes/{id}', [ClientController::class, 'quoteDetail']);
 
 // ---- Admin: auth & dashboard ----
 $router->get('/admin/login', [AdminController::class, 'showLogin']);
@@ -129,6 +147,30 @@ $router->post('/admin/bank-accounts/{id}/toggle', [AdminController::class, 'bank
 $router->get('/admin/payment-logs', [AdminController::class, 'paymentLogs']);
 $router->post('/admin/transactions/{id}/confirm', [AdminController::class, 'transactionConfirm']);
 $router->post('/admin/transactions/{id}/deny', [AdminController::class, 'transactionDeny']);
+
+// ---- Admin: content & marketing ----
+$router->get('/admin/announcements', [AdminController::class, 'announcements']);
+$router->post('/admin/announcements/add', [AdminController::class, 'announcementAdd']);
+$router->post('/admin/announcements/{id}/delete', [AdminController::class, 'announcementDelete']);
+$router->get('/admin/kb', [AdminController::class, 'kb']);
+$router->post('/admin/kb/category/add', [AdminController::class, 'kbCategoryAdd']);
+$router->post('/admin/kb/category/{id}/delete', [AdminController::class, 'kbCategoryDelete']);
+$router->post('/admin/kb/article/add', [AdminController::class, 'kbArticleAdd']);
+$router->post('/admin/kb/article/{id}/delete', [AdminController::class, 'kbArticleDelete']);
+$router->get('/admin/tld', [AdminController::class, 'tldPricing']);
+$router->post('/admin/tld/add', [AdminController::class, 'tldAdd']);
+$router->post('/admin/tld/{id}/delete', [AdminController::class, 'tldDelete']);
+$router->get('/admin/addons', [AdminController::class, 'addons']);
+$router->post('/admin/addons/add', [AdminController::class, 'addonAdd']);
+$router->post('/admin/addons/{id}/delete', [AdminController::class, 'addonDelete']);
+$router->get('/admin/promotions', [AdminController::class, 'promotions']);
+$router->post('/admin/promotions/add', [AdminController::class, 'promotionAdd']);
+$router->post('/admin/promotions/{id}/delete', [AdminController::class, 'promotionDelete']);
+$router->get('/admin/email-templates', [AdminController::class, 'emailTemplates']);
+$router->post('/admin/email-templates/{code}', [AdminController::class, 'emailTemplateSave']);
+$router->get('/admin/predefined-replies', [AdminController::class, 'predefinedReplies']);
+$router->post('/admin/predefined-replies/add', [AdminController::class, 'predefinedReplyAdd']);
+$router->post('/admin/predefined-replies/{id}/delete', [AdminController::class, 'predefinedReplyDelete']);
 
 // ---- Cron ----
 $router->get('/cron/billing', [App\Controllers\CronController::class, 'billing']);

@@ -601,6 +601,78 @@ class ClientController extends Controller
         flash('success', $autoRenew ? 'Otomatik ödeme etkinleştirildi.' : 'Otomatik ödeme kapatıldı.');
         redirect(url('client/services/' . $id));
     }
+
+    public function contacts(): void
+    {
+        $uid = $this->userId();
+        $stmt = db()->prepare('SELECT * FROM contacts WHERE user_id = ? ORDER BY id DESC');
+        $stmt->execute([$uid]);
+        $contacts = $stmt->fetchAll();
+        echo $this->render('client/contacts', ['title' => 'Alt Hesaplar / Kişiler', 'contacts' => $contacts], 'client');
+    }
+
+    public function contactAdd(): void
+    {
+        $this->validateCsrf();
+        $uid = $this->userId();
+        $firstName = trim($this->input('first_name', ''));
+        $lastName = trim($this->input('last_name', ''));
+        $email = trim($this->input('email', ''));
+        $password = (string)$this->input('password', '');
+        $permissions = (array)$this->input('permissions', []);
+
+        if ($firstName === '' || !filter_var($email, FILTER_VALIDATE_EMAIL) || strlen($password) < 6) {
+            flash('error', 'Geçerli bilgiler girin (şifre en az 6 karakter).');
+            redirect(url('client/contacts'));
+        }
+        db()->prepare('INSERT INTO contacts (user_id, first_name, last_name, email, password, permissions) VALUES (?, ?, ?, ?, ?, ?)')
+            ->execute([$uid, $firstName, $lastName, $email, password_hash($password, PASSWORD_DEFAULT), json_encode($permissions)]);
+        flash('success', 'Alt hesap oluşturuldu.');
+        redirect(url('client/contacts'));
+    }
+
+    public function contactDelete(string $id): void
+    {
+        $this->validateCsrf();
+        $uid = $this->userId();
+        db()->prepare('DELETE FROM contacts WHERE id = ? AND user_id = ?')->execute([$id, $uid]);
+        flash('success', 'Alt hesap silindi.');
+        redirect(url('client/contacts'));
+    }
+
+    public function ticketRate(string $id): void
+    {
+        $this->validateCsrf();
+        $uid = $this->userId();
+        $rating = (int)$this->input('rating', 0);
+        $comment = trim($this->input('rating_comment', ''));
+        $rating = max(1, min(5, $rating));
+        db()->prepare('UPDATE tickets SET rating = ?, rating_comment = ? WHERE id = ? AND user_id = ?')
+            ->execute([$rating, $comment, $id, $uid]);
+        flash('success', 'Değerlendirmeniz için teşekkürler!');
+        redirect(url('client/tickets/' . $id));
+    }
+
+    public function quotes(): void
+    {
+        $uid = $this->userId();
+        $stmt = db()->prepare('SELECT * FROM quotes WHERE user_id = ? ORDER BY id DESC');
+        $stmt->execute([$uid]);
+        $quotes = $stmt->fetchAll();
+        echo $this->render('client/quotes', ['title' => 'Tekliflerim', 'quotes' => $quotes], 'client');
+    }
+
+    public function quoteDetail(string $id): void
+    {
+        $uid = $this->userId();
+        $stmt = db()->prepare('SELECT * FROM quotes WHERE id = ? AND user_id = ?');
+        $stmt->execute([$id, $uid]);
+        $quote = $stmt->fetch();
+        if (!$quote) { http_response_code(404); echo $this->render('errors/404', ['title' => 'Bulunamadı'], 'client'); return; }
+        $stmt = db()->prepare('SELECT * FROM quote_items WHERE quote_id = ?');
+        $stmt->execute([$id]);
+        echo $this->render('client/quote_detail', ['title' => $quote['quote_number'], 'quote' => $quote, 'items' => $stmt->fetchAll()], 'client');
+    }
 }
 
 

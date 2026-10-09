@@ -27,6 +27,14 @@
             <a href="<?= url('admin/transactions') ?>" class="<?= active_nav('/admin/transactions') ?>"><span class="ico">⇄</span> İşlemler</a>
             <div class="section-label">Destek</div>
             <a href="<?= url('admin/tickets') ?>" class="<?= active_nav('/admin/tickets') ?>"><span class="ico">✉</span> Biletler</a>
+            <div class="section-label">İçerik & Pazarlama</div>
+            <a href="<?= url('admin/announcements') ?>" class="<?= active_nav('/admin/announcements') ?>"><span class="ico">📢</span> Duyurular</a>
+            <a href="<?= url('admin/kb') ?>" class="<?= active_nav('/admin/kb') ?>"><span class="ico">📚</span> Bilgi Bankası</a>
+            <a href="<?= url('admin/tld') ?>" class="<?= active_nav('/admin/tld') ?>"><span class="ico">⛓</span> TLD Fiyatları</a>
+            <a href="<?= url('admin/addons') ?>" class="<?= active_nav('/admin/addons') ?>"><span class="ico">➕</span> Eklentiler</a>
+            <a href="<?= url('admin/promotions') ?>" class="<?= active_nav('/admin/promotions') ?>"><span class="ico">🎟</span> Promosyonlar</a>
+            <a href="<?= url('admin/predefined-replies') ?>" class="<?= active_nav('/admin/predefined-replies') ?>"><span class="ico">💬</span> Hazır Yanıtlar</a>
+            <a href="<?= url('admin/email-templates') ?>" class="<?= active_nav('/admin/email-templates') ?>"><span class="ico">✉</span> E-posta Şablonları</a>
             <div class="section-label">Sistem</div>
             <a href="<?= url('admin/payments') ?>" class="<?= active_nav('/admin/payments') ?>"><span class="ico">💳</span> Ödemeler</a>
             <a href="<?= url('admin/bank-accounts') ?>" class="<?= active_nav('/admin/bank-accounts') ?>"><span class="ico">🏦</span> Banka Hesapları</a>

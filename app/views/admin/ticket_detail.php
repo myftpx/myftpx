@@ -40,9 +40,27 @@
     <div class="card-body">
         <form method="post" action="<?= url('admin/tickets/' . $ticket['id'] . '/reply') ?>">
             <?= csrf_field() ?>
-            <div class="form-group"><label>Yanıt</label><textarea class="form-control" name="message" required></textarea></div>
+            <?php $preReplies = db()->query('SELECT * FROM predefined_replies ORDER BY name')->fetchAll(); ?>
+            <?php if ($preReplies): ?>
+            <div class="form-group">
+                <label>Hazır Yanıt Ekle</label>
+                <select class="form-control" onchange="if(this.value) insertReply(this.value, this)">
+                    <option value="">— Hazır yanıt seçin —</option>
+                    <?php foreach ($preReplies as $pr): ?>
+                        <option value="<?= e(htmlspecialchars($pr['body'], ENT_QUOTES)) ?>"><?= e($pr['name']) ?></option>
+                    <?php endforeach; ?>
+                </select>
+            </div>
+            <?php endif; ?>
+            <div class="form-group"><label>Yanıt</label><textarea class="form-control" name="message" id="reply-message" required></textarea></div>
             <button class="btn btn-primary" type="submit">Yanıtla</button>
         </form>
     </div>
 </div>
+<script>
+function insertReply(text, sel) {
+    document.getElementById('reply-message').value = text;
+    sel.value = '';
+}
+</script>
 <?php endif; ?>

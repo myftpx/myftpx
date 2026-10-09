@@ -15,7 +15,10 @@
         <nav class="store-nav-links">
             <a href="<?= url('/') ?>" class="<?= active_nav('/', true) ?: active_nav('/store', true) ?>">Ana Sayfa</a>
             <a href="<?= url('/#products') ?>">Hizmetler</a>
-            <a href="<?= url('/#domains') ?>">Alan Adları</a>
+            <a href="<?= url('domains') ?>" class="<?= active_nav('/domains') ?>">Alan Adları</a>
+            <a href="<?= url('announcements') ?>" class="<?= active_nav('/announcements') ?>">Duyurular</a>
+            <a href="<?= url('knowledgebase') ?>" class="<?= active_nav('/knowledgebase') ?>">Bilgi Bankası</a>
+            <a href="<?= url('network-status') ?>" class="<?= active_nav('/network-status') ?>">Ağ Durumu</a>
             <?php if (auth()->check()): ?>
                 <a href="<?= url('client') ?>" class="<?= active_nav('/client') ?>">Müşteri Paneli</a>
                 <a href="<?= url('logout') ?>">Çıkış</a>

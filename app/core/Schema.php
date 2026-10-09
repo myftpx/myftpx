@@ -20,7 +20,7 @@ class Schema
         $tables['invoices'] = "CREATE TABLE IF NOT EXISTS invoices (id {$autoinc}, invoice_number VARCHAR(50) NOT NULL UNIQUE, user_id INT NOT NULL, amount DECIMAL(15,2) DEFAULT 0, tax DECIMAL(15,2) DEFAULT 0, total DECIMAL(15,2) DEFAULT 0, status VARCHAR(20) DEFAULT 'unpaid', due_date DATE NULL, notes TEXT, created_at DATETIME DEFAULT CURRENT_TIMESTAMP, paid_at DATETIME NULL)";
         $tables['invoice_items'] = "CREATE TABLE IF NOT EXISTS invoice_items (id {$autoinc}, invoice_id INT NOT NULL, description VARCHAR(255) NOT NULL, amount DECIMAL(15,2) DEFAULT 0)";
         $tables['transactions'] = "CREATE TABLE IF NOT EXISTS transactions (id {$autoinc}, invoice_id INT NULL, user_id INT NOT NULL, amount DECIMAL(15,2) DEFAULT 0, fee DECIMAL(15,2) DEFAULT 0, gateway VARCHAR(50) DEFAULT '', transaction_id VARCHAR(190) DEFAULT '', status VARCHAR(20) DEFAULT 'pending', created_at DATETIME DEFAULT CURRENT_TIMESTAMP)";
-        $tables['tickets'] = "CREATE TABLE IF NOT EXISTS tickets (id {$autoinc}, ticket_number VARCHAR(50) NOT NULL UNIQUE, user_id INT NOT NULL, subject VARCHAR(255) NOT NULL, department VARCHAR(100) DEFAULT 'Destek', priority VARCHAR(20) DEFAULT 'medium', status VARCHAR(20) DEFAULT 'open', last_reply_at DATETIME DEFAULT CURRENT_TIMESTAMP, created_at DATETIME DEFAULT CURRENT_TIMESTAMP)";
+        $tables['tickets'] = "CREATE TABLE IF NOT EXISTS tickets (id {$autoinc}, ticket_number VARCHAR(50) NOT NULL UNIQUE, user_id INT NOT NULL, subject VARCHAR(255) NOT NULL, department VARCHAR(100) DEFAULT 'Destek', priority VARCHAR(20) DEFAULT 'medium', status VARCHAR(20) DEFAULT 'open', rating TINYINT DEFAULT 0, rating_comment TEXT, last_reply_at DATETIME DEFAULT CURRENT_TIMESTAMP, created_at DATETIME DEFAULT CURRENT_TIMESTAMP)";
         $tables['ticket_replies'] = "CREATE TABLE IF NOT EXISTS ticket_replies (id {$autoinc}, ticket_id INT NOT NULL, user_id INT NULL, is_admin TINYINT DEFAULT 0, message TEXT NOT NULL, created_at DATETIME DEFAULT CURRENT_TIMESTAMP)";
         $tables['api_keys'] = "CREATE TABLE IF NOT EXISTS api_keys (id {$autoinc}, user_id INT NOT NULL, name VARCHAR(190) NOT NULL, api_key VARCHAR(255) NOT NULL UNIQUE, auth_key VARCHAR(255) NOT NULL, allowed_ips TEXT, permissions TEXT, status VARCHAR(20) DEFAULT 'active', last_used_at DATETIME NULL, created_at DATETIME DEFAULT CURRENT_TIMESTAMP)";
         $tables['payment_gateways'] = "CREATE TABLE IF NOT EXISTS payment_gateways (id {$autoinc}, name VARCHAR(100) NOT NULL, code VARCHAR(50) NOT NULL UNIQUE, enabled TINYINT DEFAULT 0, config TEXT, sort_order INT DEFAULT 0)";
@@ -30,6 +30,17 @@ class Schema
         $tables['saved_cards'] = "CREATE TABLE IF NOT EXISTS saved_cards (id {$autoinc}, user_id INT NOT NULL, gateway VARCHAR(50) NOT NULL, card_token VARCHAR(255) NOT NULL, card_user_key VARCHAR(255) DEFAULT '', last4 VARCHAR(8) DEFAULT '', brand VARCHAR(30) DEFAULT '', holder_name VARCHAR(190) DEFAULT '', expiry_month VARCHAR(2) DEFAULT '', expiry_year VARCHAR(4) DEFAULT '', is_default TINYINT DEFAULT 0, status VARCHAR(20) DEFAULT 'active', created_at DATETIME DEFAULT CURRENT_TIMESTAMP)";
         $tables['payment_logs'] = "CREATE TABLE IF NOT EXISTS payment_logs (id {$autoinc}, user_id INT NULL, invoice_id INT NULL, gateway VARCHAR(50) DEFAULT '', action VARCHAR(100) NOT NULL, reference VARCHAR(190) DEFAULT '', amount DECIMAL(15,2) DEFAULT 0, status VARCHAR(20) DEFAULT 'info', message TEXT, ip VARCHAR(60) DEFAULT '', created_at DATETIME DEFAULT CURRENT_TIMESTAMP)";
         $tables['bank_accounts'] = "CREATE TABLE IF NOT EXISTS bank_accounts (id {$autoinc}, bank_name VARCHAR(150) NOT NULL, account_holder VARCHAR(190) DEFAULT '', iban VARCHAR(40) DEFAULT '', account_no VARCHAR(40) DEFAULT '', branch_code VARCHAR(40) DEFAULT '', is_active TINYINT DEFAULT 1, sort_order INT DEFAULT 0, created_at DATETIME DEFAULT CURRENT_TIMESTAMP)";
+        $tables['announcements'] = "CREATE TABLE IF NOT EXISTS announcements (id {$autoinc}, title VARCHAR(255) NOT NULL, body TEXT, status TINYINT DEFAULT 1, published_at DATETIME DEFAULT CURRENT_TIMESTAMP, created_at DATETIME DEFAULT CURRENT_TIMESTAMP)";
+        $tables['kb_categories'] = "CREATE TABLE IF NOT EXISTS kb_categories (id {$autoinc}, name VARCHAR(190) NOT NULL, description TEXT, sort_order INT DEFAULT 0)";
+        $tables['kb_articles'] = "CREATE TABLE IF NOT EXISTS kb_articles (id {$autoinc}, category_id INT NOT NULL, title VARCHAR(255) NOT NULL, body TEXT, views INT DEFAULT 0, status TINYINT DEFAULT 1, created_at DATETIME DEFAULT CURRENT_TIMESTAMP, updated_at DATETIME NULL)";
+        $tables['tld_pricing'] = "CREATE TABLE IF NOT EXISTS tld_pricing (id {$autoinc}, tld VARCHAR(30) NOT NULL UNIQUE, register_price DECIMAL(15,2) DEFAULT 0, transfer_price DECIMAL(15,2) DEFAULT 0, renew_price DECIMAL(15,2) DEFAULT 0, status TINYINT DEFAULT 1)";
+        $tables['addons'] = "CREATE TABLE IF NOT EXISTS addons (id {$autoinc}, name VARCHAR(190) NOT NULL, description TEXT, price DECIMAL(15,2) DEFAULT 0, billing_cycle VARCHAR(20) DEFAULT 'monthly', status TINYINT DEFAULT 1)";
+        $tables['service_addons'] = "CREATE TABLE IF NOT EXISTS service_addons (id {$autoinc}, service_id INT NOT NULL, addon_id INT NOT NULL, status VARCHAR(20) DEFAULT 'active')";
+        $tables['promotions'] = "CREATE TABLE IF NOT EXISTS promotions (id {$autoinc}, code VARCHAR(50) NOT NULL UNIQUE, discount_type VARCHAR(20) DEFAULT 'percent', discount_value DECIMAL(15,2) DEFAULT 0, applies_to VARCHAR(100) DEFAULT 'all', valid_from DATE NULL, valid_until DATE NULL, max_uses INT DEFAULT 0, used INT DEFAULT 0, status TINYINT DEFAULT 1)";
+        $tables['contacts'] = "CREATE TABLE IF NOT EXISTS contacts (id {$autoinc}, user_id INT NOT NULL, first_name VARCHAR(100) NOT NULL, last_name VARCHAR(100) NOT NULL, email VARCHAR(190) NOT NULL, password VARCHAR(255) DEFAULT '', permissions TEXT, status VARCHAR(20) DEFAULT 'active', created_at DATETIME DEFAULT CURRENT_TIMESTAMP)";
+        $tables['predefined_replies'] = "CREATE TABLE IF NOT EXISTS predefined_replies (id {$autoinc}, name VARCHAR(190) NOT NULL, body TEXT)";
+        $tables['quotes'] = "CREATE TABLE IF NOT EXISTS quotes (id {$autoinc}, quote_number VARCHAR(50) NOT NULL UNIQUE, user_id INT NOT NULL, amount DECIMAL(15,2) DEFAULT 0, total DECIMAL(15,2) DEFAULT 0, status VARCHAR(20) DEFAULT 'pending', valid_until DATE NULL, created_at DATETIME DEFAULT CURRENT_TIMESTAMP)";
+        $tables['quote_items'] = "CREATE TABLE IF NOT EXISTS quote_items (id {$autoinc}, quote_id INT NOT NULL, description VARCHAR(255) NOT NULL, amount DECIMAL(15,2) DEFAULT 0)";
 
         foreach ($tables as $sql) {
             $db->exec($sql);
@@ -98,6 +109,17 @@ class Schema
             'saved_cards' => "CREATE TABLE IF NOT EXISTS saved_cards (id {$autoinc}, user_id INT NOT NULL, gateway VARCHAR(50) NOT NULL, card_token VARCHAR(255) NOT NULL, card_user_key VARCHAR(255) DEFAULT '', last4 VARCHAR(8) DEFAULT '', brand VARCHAR(30) DEFAULT '', holder_name VARCHAR(190) DEFAULT '', expiry_month VARCHAR(2) DEFAULT '', expiry_year VARCHAR(4) DEFAULT '', is_default TINYINT DEFAULT 0, status VARCHAR(20) DEFAULT 'active', created_at DATETIME DEFAULT CURRENT_TIMESTAMP)",
             'payment_logs' => "CREATE TABLE IF NOT EXISTS payment_logs (id {$autoinc}, user_id INT NULL, invoice_id INT NULL, gateway VARCHAR(50) DEFAULT '', action VARCHAR(100) NOT NULL, reference VARCHAR(190) DEFAULT '', amount DECIMAL(15,2) DEFAULT 0, status VARCHAR(20) DEFAULT 'info', message TEXT, ip VARCHAR(60) DEFAULT '', created_at DATETIME DEFAULT CURRENT_TIMESTAMP)",
             'bank_accounts' => "CREATE TABLE IF NOT EXISTS bank_accounts (id {$autoinc}, bank_name VARCHAR(150) NOT NULL, account_holder VARCHAR(190) DEFAULT '', iban VARCHAR(40) DEFAULT '', account_no VARCHAR(40) DEFAULT '', branch_code VARCHAR(40) DEFAULT '', is_active TINYINT DEFAULT 1, sort_order INT DEFAULT 0, created_at DATETIME DEFAULT CURRENT_TIMESTAMP)",
+            'announcements' => "CREATE TABLE IF NOT EXISTS announcements (id {$autoinc}, title VARCHAR(255) NOT NULL, body TEXT, status TINYINT DEFAULT 1, published_at DATETIME DEFAULT CURRENT_TIMESTAMP, created_at DATETIME DEFAULT CURRENT_TIMESTAMP)",
+            'kb_categories' => "CREATE TABLE IF NOT EXISTS kb_categories (id {$autoinc}, name VARCHAR(190) NOT NULL, description TEXT, sort_order INT DEFAULT 0)",
+            'kb_articles' => "CREATE TABLE IF NOT EXISTS kb_articles (id {$autoinc}, category_id INT NOT NULL, title VARCHAR(255) NOT NULL, body TEXT, views INT DEFAULT 0, status TINYINT DEFAULT 1, created_at DATETIME DEFAULT CURRENT_TIMESTAMP, updated_at DATETIME NULL)",
+            'tld_pricing' => "CREATE TABLE IF NOT EXISTS tld_pricing (id {$autoinc}, tld VARCHAR(30) NOT NULL UNIQUE, register_price DECIMAL(15,2) DEFAULT 0, transfer_price DECIMAL(15,2) DEFAULT 0, renew_price DECIMAL(15,2) DEFAULT 0, status TINYINT DEFAULT 1)",
+            'addons' => "CREATE TABLE IF NOT EXISTS addons (id {$autoinc}, name VARCHAR(190) NOT NULL, description TEXT, price DECIMAL(15,2) DEFAULT 0, billing_cycle VARCHAR(20) DEFAULT 'monthly', status TINYINT DEFAULT 1)",
+            'service_addons' => "CREATE TABLE IF NOT EXISTS service_addons (id {$autoinc}, service_id INT NOT NULL, addon_id INT NOT NULL, status VARCHAR(20) DEFAULT 'active')",
+            'promotions' => "CREATE TABLE IF NOT EXISTS promotions (id {$autoinc}, code VARCHAR(50) NOT NULL UNIQUE, discount_type VARCHAR(20) DEFAULT 'percent', discount_value DECIMAL(15,2) DEFAULT 0, applies_to VARCHAR(100) DEFAULT 'all', valid_from DATE NULL, valid_until DATE NULL, max_uses INT DEFAULT 0, used INT DEFAULT 0, status TINYINT DEFAULT 1)",
+            'contacts' => "CREATE TABLE IF NOT EXISTS contacts (id {$autoinc}, user_id INT NOT NULL, first_name VARCHAR(100) NOT NULL, last_name VARCHAR(100) NOT NULL, email VARCHAR(190) NOT NULL, password VARCHAR(255) DEFAULT '', permissions TEXT, status VARCHAR(20) DEFAULT 'active', created_at DATETIME DEFAULT CURRENT_TIMESTAMP)",
+            'predefined_replies' => "CREATE TABLE IF NOT EXISTS predefined_replies (id {$autoinc}, name VARCHAR(190) NOT NULL, body TEXT)",
+            'quotes' => "CREATE TABLE IF NOT EXISTS quotes (id {$autoinc}, quote_number VARCHAR(50) NOT NULL UNIQUE, user_id INT NOT NULL, amount DECIMAL(15,2) DEFAULT 0, total DECIMAL(15,2) DEFAULT 0, status VARCHAR(20) DEFAULT 'pending', valid_until DATE NULL, created_at DATETIME DEFAULT CURRENT_TIMESTAMP)",
+            'quote_items' => "CREATE TABLE IF NOT EXISTS quote_items (id {$autoinc}, quote_id INT NOT NULL, description VARCHAR(255) NOT NULL, amount DECIMAL(15,2) DEFAULT 0)",
         ];
         foreach ($tables as $sql) {
             $db->exec($sql);
@@ -110,6 +132,15 @@ class Schema
         }
         if (!in_array('card_id', $cols, true)) {
             $db->exec('ALTER TABLE services ADD COLUMN card_id INT NULL');
+        }
+
+        // Missing columns on tickets (rating)
+        $tcols = self::columns($db, 'tickets');
+        if (!in_array('rating', $tcols, true)) {
+            $db->exec('ALTER TABLE tickets ADD COLUMN rating TINYINT DEFAULT 0');
+        }
+        if (!in_array('rating_comment', $tcols, true)) {
+            $db->exec('ALTER TABLE tickets ADD COLUMN rating_comment TEXT');
         }
 
         // Missing gateways
@@ -130,6 +161,31 @@ class Schema
         $stmt->execute(['cron_secret']);
         if ((int)$stmt->fetchColumn() === 0) {
             $db->prepare('INSERT INTO settings (name, value) VALUES (?, ?)')->execute(['cron_secret', bin2hex(random_bytes(16))]);
+        }
+
+        // Default email templates (if none)
+        if ((int)$db->query('SELECT COUNT(*) FROM email_templates')->fetchColumn() === 0) {
+            $stmt = $db->prepare('INSERT INTO email_templates (code, subject, body, enabled) VALUES (?, ?, ?, 1)');
+            $templates = [
+                ['welcome', 'Hoş Geldiniz {first_name}!', "Merhaba {first_name},\n\n{site_name} hesabınıza hoş geldiniz. Hesabınıza {login_url} adresinden giriş yapabilirsiniz.\n\nSaygılarımızla,\n{site_name}"],
+                ['invoice_created', 'Yeni Faturanız: {invoice_number}', "Merhaba {first_name},\n\n{invoice_number} numaralı {total} tutarında faturanız oluşturuldu.\n\nGörüntülemek için: {invoice_url}\n\n{site_name}"],
+                ['invoice_paid', 'Ödemeniz Alındı — {invoice_number}', "Merhaba {first_name},\n\n{invoice_number} numaralı faturanıza yapılan {total} tutarındaki ödemeniz için teşekkür ederiz.\n\n{site_name}"],
+                ['ticket_opened', 'Destek Biletiniz Oluşturuldu: {ticket_number}', "Merhaba {first_name},\n\n{ticket_number} numaralı destek biletiniz oluşturuldu. Ekibimiz en kısa sürede size dönüş yapacaktır.\n\n{site_name}"],
+                ['ticket_reply', 'Destek Biletinize Yanıt: {ticket_number}', "Merhaba {first_name},\n\n{ticket_number} numaralı biletinize yeni bir yanıt eklendi.\n\nGörüntülemek için: {ticket_url}\n\n{site_name}"],
+                ['service_suspended', 'Hizmetiniz Askıya Alındı', "Merhaba {first_name},\n\n{domain} hizmetiniz ödeme yapılmadığı için askıya alınmıştır. Lütfen en kısa sürede ödeme yapın.\n\n{site_name}"],
+            ];
+            foreach ($templates as $t) {
+                $stmt->execute($t);
+            }
+        }
+
+        // Default TLD pricing (if none)
+        if ((int)$db->query('SELECT COUNT(*) FROM tld_pricing')->fetchColumn() === 0) {
+            $stmt = $db->prepare('INSERT INTO tld_pricing (tld, register_price, transfer_price, renew_price, status) VALUES (?, ?, ?, ?, 1)');
+            $tlds = [['.com', 15.90, 15.90, 15.90], ['.net', 18.90, 18.90, 18.90], ['.org', 16.90, 16.90, 16.90], ['.info', 9.90, 9.90, 9.90], ['.xyz', 7.90, 7.90, 7.90], ['.co', 25.90, 25.90, 25.90], ['.io', 45.90, 45.90, 45.90], ['.dev', 22.90, 22.90, 22.90], ['.app', 24.90, 24.90, 24.90], ['.site', 8.90, 8.90, 8.90], ['.online', 8.90, 8.90, 8.90], ['.shop', 12.90, 12.90, 12.90]];
+            foreach ($tlds as $t) {
+                $stmt->execute($t);
+            }
         }
     }
 

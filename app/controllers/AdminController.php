@@ -623,6 +623,191 @@ class AdminController extends Controller
         }
         redirect(url('admin/transactions'));
     }
+
+    public function announcements(): void
+    {
+        $this->guard();
+        $items = db()->query('SELECT * FROM announcements ORDER BY published_at DESC')->fetchAll();
+        echo $this->render('admin/announcements', ['title' => 'Duyurular', 'items' => $items], 'admin');
+    }
+
+    public function announcementAdd(): void
+    {
+        $this->guard(); $this->validateCsrf();
+        db()->prepare('INSERT INTO announcements (title, body, status) VALUES (?, ?, ?)')
+            ->execute([trim($this->input('title', '')), $this->input('body', ''), (int)$this->input('status', 1)]);
+        flash('success', 'Duyuru eklendi.');
+        redirect(url('admin/announcements'));
+    }
+
+    public function announcementDelete(string $id): void
+    {
+        $this->guard(); $this->validateCsrf();
+        db()->prepare('DELETE FROM announcements WHERE id = ?')->execute([$id]);
+        flash('success', 'Duyuru silindi.');
+        redirect(url('admin/announcements'));
+    }
+
+    public function kb(): void
+    {
+        $this->guard();
+        $categories = db()->query('SELECT c.*, (SELECT COUNT(*) FROM kb_articles a WHERE a.category_id = c.id) cnt FROM kb_categories c ORDER BY c.sort_order, c.id')->fetchAll();
+        $articles = db()->query('SELECT a.*, c.name cat FROM kb_articles a LEFT JOIN kb_categories c ON c.id = a.category_id ORDER BY a.id DESC')->fetchAll();
+        echo $this->render('admin/kb', ['title' => 'Bilgi Bankası', 'categories' => $categories, 'articles' => $articles], 'admin');
+    }
+
+    public function kbCategoryAdd(): void
+    {
+        $this->guard(); $this->validateCsrf();
+        db()->prepare('INSERT INTO kb_categories (name, description) VALUES (?, ?)')->execute([trim($this->input('name', '')), $this->input('description', '')]);
+        flash('success', 'Kategori eklendi.');
+        redirect(url('admin/kb'));
+    }
+
+    public function kbCategoryDelete(string $id): void
+    {
+        $this->guard(); $this->validateCsrf();
+        db()->prepare('DELETE FROM kb_categories WHERE id = ?')->execute([$id]);
+        flash('success', 'Kategori silindi.');
+        redirect(url('admin/kb'));
+    }
+
+    public function kbArticleAdd(): void
+    {
+        $this->guard(); $this->validateCsrf();
+        db()->prepare('INSERT INTO kb_articles (category_id, title, body, status) VALUES (?, ?, ?, ?)')
+            ->execute([(int)$this->input('category_id', 0), trim($this->input('title', '')), $this->input('body', ''), (int)$this->input('status', 1)]);
+        flash('success', 'Makale eklendi.');
+        redirect(url('admin/kb'));
+    }
+
+    public function kbArticleDelete(string $id): void
+    {
+        $this->guard(); $this->validateCsrf();
+        db()->prepare('DELETE FROM kb_articles WHERE id = ?')->execute([$id]);
+        flash('success', 'Makale silindi.');
+        redirect(url('admin/kb'));
+    }
+    public function tldPricing(): void
+    {
+        $this->guard();
+        $tlds = db()->query('SELECT * FROM tld_pricing ORDER BY tld')->fetchAll();
+        echo $this->render('admin/tld', ['title' => 'TLD Fiyatlandırma', 'tlds' => $tlds], 'admin');
+    }
+
+    public function tldAdd(): void
+    {
+        $this->guard(); $this->validateCsrf();
+        $tld = '.' . ltrim(trim($this->input('tld', '')), '.');
+        db()->prepare('INSERT OR IGNORE INTO tld_pricing (tld, register_price, transfer_price, renew_price, status) VALUES (?, ?, ?, ?, ?)')
+            ->execute([$tld, (float)$this->input('register_price', 0), (float)$this->input('transfer_price', 0), (float)$this->input('renew_price', 0), 1]);
+        flash('success', 'TLD eklendi.');
+        redirect(url('admin/tld'));
+    }
+
+    public function tldDelete(string $id): void
+    {
+        $this->guard(); $this->validateCsrf();
+        db()->prepare('DELETE FROM tld_pricing WHERE id = ?')->execute([$id]);
+        flash('success', 'TLD silindi.');
+        redirect(url('admin/tld'));
+    }
+
+    public function addons(): void
+    {
+        $this->guard();
+        $addons = db()->query('SELECT * FROM addons ORDER BY id DESC')->fetchAll();
+        echo $this->render('admin/addons', ['title' => 'Ürün Eklentileri', 'addons' => $addons], 'admin');
+    }
+
+    public function addonAdd(): void
+    {
+        $this->guard(); $this->validateCsrf();
+        db()->prepare('INSERT INTO addons (name, description, price, billing_cycle, status) VALUES (?, ?, ?, ?, ?)')
+            ->execute([trim($this->input('name', '')), $this->input('description', ''), (float)$this->input('price', 0), $this->input('billing_cycle', 'monthly'), 1]);
+        flash('success', 'Eklenti oluşturuldu.');
+        redirect(url('admin/addons'));
+    }
+
+    public function addonDelete(string $id): void
+    {
+        $this->guard(); $this->validateCsrf();
+        db()->prepare('DELETE FROM addons WHERE id = ?')->execute([$id]);
+        flash('success', 'Eklenti silindi.');
+        redirect(url('admin/addons'));
+    }
+
+    public function promotions(): void
+    {
+        $this->guard();
+        $promos = db()->query('SELECT * FROM promotions ORDER BY id DESC')->fetchAll();
+        echo $this->render('admin/promotions', ['title' => 'Promosyonlar / Kuponlar', 'promos' => $promos], 'admin');
+    }
+
+    public function promotionAdd(): void
+    {
+        $this->guard(); $this->validateCsrf();
+        db()->prepare('INSERT INTO promotions (code, discount_type, discount_value, applies_to, valid_from, valid_until, max_uses, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?)')
+            ->execute([
+                strtoupper(trim($this->input('code', ''))),
+                $this->input('discount_type', 'percent'),
+                (float)$this->input('discount_value', 0),
+                $this->input('applies_to', 'all'),
+                $this->input('valid_from', '') ?: null,
+                $this->input('valid_until', '') ?: null,
+                (int)$this->input('max_uses', 0),
+                1,
+            ]);
+        flash('success', 'Promosyon oluşturuldu.');
+        redirect(url('admin/promotions'));
+    }
+
+    public function promotionDelete(string $id): void
+    {
+        $this->guard(); $this->validateCsrf();
+        db()->prepare('DELETE FROM promotions WHERE id = ?')->execute([$id]);
+        flash('success', 'Promosyon silindi.');
+        redirect(url('admin/promotions'));
+    }
+
+    public function emailTemplates(): void
+    {
+        $this->guard();
+        $templates = db()->query('SELECT * FROM email_templates ORDER BY id')->fetchAll();
+        echo $this->render('admin/email_templates', ['title' => 'E-posta Şablonları', 'templates' => $templates], 'admin');
+    }
+
+    public function emailTemplateSave(string $code): void
+    {
+        $this->guard(); $this->validateCsrf();
+        db()->prepare('UPDATE email_templates SET subject = ?, body = ?, enabled = ? WHERE code = ?')
+            ->execute([$this->input('subject', ''), $this->input('body', ''), (int)$this->input('enabled', 1), $code]);
+        flash('success', 'Şablon güncellendi.');
+        redirect(url('admin/email-templates'));
+    }
+
+    public function predefinedReplies(): void
+    {
+        $this->guard();
+        $replies = db()->query('SELECT * FROM predefined_replies ORDER BY name')->fetchAll();
+        echo $this->render('admin/predefined_replies', ['title' => 'Hazır Yanıtlar', 'replies' => $replies], 'admin');
+    }
+
+    public function predefinedReplyAdd(): void
+    {
+        $this->guard(); $this->validateCsrf();
+        db()->prepare('INSERT INTO predefined_replies (name, body) VALUES (?, ?)')->execute([trim($this->input('name', '')), $this->input('body', '')]);
+        flash('success', 'Hazır yanıt eklendi.');
+        redirect(url('admin/predefined-replies'));
+    }
+
+    public function predefinedReplyDelete(string $id): void
+    {
+        $this->guard(); $this->validateCsrf();
+        db()->prepare('DELETE FROM predefined_replies WHERE id = ?')->execute([$id]);
+        flash('success', 'Hazır yanıt silindi.');
+        redirect(url('admin/predefined-replies'));
+    }
 }
 
 

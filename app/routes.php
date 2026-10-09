@@ -220,6 +220,7 @@ $router->post('/admin/mass-mail/send', [AdminController::class, 'massMailSend'])
 
 // ---- Cron ----
 $router->get('/cron/billing', [App\Controllers\CronController::class, 'billing']);
+$router->get('/cron/run', [App\Controllers\CronController::class, 'run']);
 
 // ---- API ----
 $router->all('/api/v1/{resource}', [ApiController::class, 'handle']);

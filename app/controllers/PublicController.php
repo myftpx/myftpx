@@ -101,8 +101,19 @@ class PublicController extends Controller
             ['description' => 'Alan adı kaydı: ' . $domain . ' (' . $years . ' yıl)', 'amount' => $amount],
         ]);
 
-        db()->prepare('INSERT INTO domains (user_id, domain, tld, registration_period, status, expiry_date, nameservers, dns) VALUES (?, ?, ?, ?, "pending", ?, ?, ?)')
-            ->execute([$uid, $domain, $tld, $years, date('Y-m-d', strtotime('+' . $years . ' years')), json_encode(['ns1.rcvxtr.com', 'ns2.rcvxtr.com']), json_encode([])]);
+        // Register via Netlen if enabled
+        $registrar = 'manual';
+        $api = netlen();
+        if ($api && $api->isEnabled()) {
+            $user = auth()->user();
+            $contact = ['name' => $user['first_name'] . ' ' . $user['last_name'], 'email' => $user['email'], 'phone' => $user['phone'] ?: '+905000000000', 'address' => $user['address'] ?: 'Adres', 'city' => $user['city'] ?: 'Istanbul', 'postal_code' => $user['postal_code'] ?: '34000', 'country' => 'TR'];
+            if (($user['account_type'] ?? '') === 'corporate' && $user['tax_no']) { $contact['tax_number'] = $user['tax_no']; $contact['organization'] = $user['company']; }
+            if ($user['tc_no']) { $contact['tckn'] = $user['tc_no']; }
+            $res = $api->registerDomain($domain, $years, $contact, [setting('netlen_ns1'), setting('netlen_ns2')]);
+            $registrar = $res['success'] ? 'netlen' : 'manual';
+        }
+        db()->prepare('INSERT INTO domains (user_id, domain, tld, registrar, registration_period, status, expiry_date, nameservers, dns) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)')
+            ->execute([$uid, $domain, $tld, $registrar, $years, 'pending', date('Y-m-d', strtotime('+' . $years . ' years')), json_encode([setting('netlen_ns1', 'ns1.netlen.com.tr'), setting('netlen_ns2', 'ns2.netlen.com.tr')]), json_encode([])]);
 
         flash('info', 'Alan adı siparişiniz oluşturuldu. Ödeme sonrası kayıt tamamlanacaktır.');
         redirect(url('client/invoices/' . $invoice));

@@ -7,6 +7,30 @@
     <div class="stat-card"><span class="ico">₺</span><div class="label">Toplam Gelir</div><div class="value"><?= money($stats['revenue']) ?></div></div>
 </div>
 
+<?php
+$chartDriver = db()->getAttribute(\PDO::ATTR_DRIVER_NAME);
+if ($chartDriver === 'mysql') {
+    $rev = db()->query("SELECT DATE_FORMAT(paid_at, '%m.%Y') lbl, SUM(total) s FROM invoices WHERE status='paid' AND paid_at IS NOT NULL GROUP BY DATE_FORMAT(paid_at, '%Y-%m') ORDER BY DATE_FORMAT(paid_at, '%Y-%m') DESC LIMIT 8")->fetchAll();
+} else {
+    $rev = db()->query("SELECT strftime('%m.%Y', paid_at) lbl, SUM(total) s FROM invoices WHERE status='paid' AND paid_at IS NOT NULL GROUP BY strftime('%Y-%m', paid_at) ORDER BY strftime('%Y-%m', paid_at) DESC LIMIT 8")->fetchAll();
+}
+$rev = array_reverse($rev);
+$maxRev = 0; foreach ($rev as $r) { if ((float)$r['s'] > $maxRev) $maxRev = (float)$r['s']; }
+?>
+<div class="card mb-3">
+    <div class="card-header"><h3>Gelir Grafiği (son aylar)</h3></div>
+    <div class="card-body">
+        <div style="display:flex;align-items:flex-end;gap:10px;height:180px;padding:10px 0">
+            <?php foreach ($rev as $r): $h = $maxRev > 0 ? max(6, (float)$r['s'] / $maxRev * 150) : 6; ?>
+                <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:6px">
+                    <div style="width:100%;height:<?= (int)$h ?>px;background:linear-gradient(180deg,var(--primary),var(--accent));border-radius:6px 6px 0 0" title="<?= money($r['s']) ?>"></div>
+                    <div class="small text-muted"><?= e($r['lbl']) ?></div>
+                </div>
+            <?php endforeach; ?>
+            <?php if (empty($rev)): ?><div class="text-muted">Henüz veri yok.</div><?php endif; ?>
+        </div>
+    </div>
+</div>
 <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px" class="dash-grid">
     <div class="card">
         <div class="card-header"><h3>Son Destek Biletleri</h3><a class="btn btn-outline btn-sm" href="<?= url('admin/tickets') ?>">Tümü</a></div>
